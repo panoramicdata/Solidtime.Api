@@ -1,9 +1,3 @@
-using System.Linq;
-using System.Threading.Tasks;
-using AwesomeAssertions;
-using Solidtime.Api.Models;
-using Xunit;
-
 namespace Solidtime.Api.Test;
 
 /// <summary>
@@ -49,8 +43,10 @@ public class MemberTests(ITestOutputHelper testOutputHelper, Fixture fixture)
 			member.UserId.Should().NotBeNullOrWhiteSpace();
 			member.OrganizationId.Should().Be(organizationId);
 			member.Role.Should().NotBeNullOrWhiteSpace();
-			member.CreatedAt.Should().BeBefore(System.DateTimeOffset.UtcNow);
-			member.UpdatedAt.Should().BeBefore(System.DateTimeOffset.UtcNow);
+			member.CreatedAt.Should().NotBeNull();
+			member.CreatedAt!.Value.Should().BeBefore(DateTimeOffset.UtcNow);
+			member.UpdatedAt.Should().NotBeNull();
+			member.UpdatedAt!.Value.Should().BeBefore(DateTimeOffset.UtcNow);
 		}
 	}
 
@@ -67,7 +63,8 @@ public class MemberTests(ITestOutputHelper testOutputHelper, Fixture fixture)
 			.GetAsync(organizationId, 1, 5, CancellationToken);
 
 		result.Should().NotBeNull();
-		result.Meta.CurrentPage.Should().Be(1);
+		result.Meta.Should().NotBeNull();
+		result.Meta!.CurrentPage.Should().Be(1);
 		result.Meta.PerPage.Should().Be(5);
 		result.Data.Count.Should().BeLessThanOrEqualTo(5);
 	}

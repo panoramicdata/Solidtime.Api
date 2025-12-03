@@ -1,10 +1,8 @@
-using System;
-using System.Collections.Generic;
 using System.IO;
 using System.Threading;
-using System.Threading.Tasks;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Logging;
 using Xunit.Microsoft.DependencyInjection;
 using Xunit.Microsoft.DependencyInjection.Abstracts;
 
@@ -33,7 +31,11 @@ public class Fixture : TestBedFixture
 
 		services
 			.AddScoped<CancellationTokenSource>()
-			.Configure<Configuration>(_configuration.GetSection("Configuration"));
+			.Configure<Configuration>(_configuration.GetSection("Configuration"))
+			.AddLogging(builder =>
+			{
+				builder.SetMinimumLevel(LogLevel.Debug);
+			});
 	}
 
 	/// <summary>

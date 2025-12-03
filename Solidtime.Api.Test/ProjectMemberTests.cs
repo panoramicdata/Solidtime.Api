@@ -1,9 +1,3 @@
-using System.Linq;
-using System.Threading.Tasks;
-using AwesomeAssertions;
-using Solidtime.Api.Models;
-using Xunit;
-
 namespace Solidtime.Api.Test;
 
 /// <summary>
@@ -48,8 +42,10 @@ public class ProjectMemberTests(ITestOutputHelper testOutputHelper, Fixture fixt
 			member.Id.Should().NotBeNullOrWhiteSpace();
 			member.UserId.Should().NotBeNullOrWhiteSpace();
 			member.ProjectId.Should().Be(projectId);
-			member.CreatedAt.Should().BeBefore(System.DateTimeOffset.UtcNow);
-			member.UpdatedAt.Should().BeBefore(System.DateTimeOffset.UtcNow);
+			member.CreatedAt.Should().NotBeNull();
+			member.CreatedAt!.Value.Should().BeBefore(DateTimeOffset.UtcNow);
+			member.UpdatedAt.Should().NotBeNull();
+			member.UpdatedAt!.Value.Should().BeBefore(DateTimeOffset.UtcNow);
 		}
 	}
 }

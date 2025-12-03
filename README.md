@@ -1,5 +1,6 @@
 # Solidtime.Api NuGet Package
 
+[![Codacy Badge](https://app.codacy.com/project/badge/Grade/3201cac7238d4aeaa062e1fc6092c715)](https://app.codacy.com/gh/panoramicdata/Solidtime.Api/dashboard?utm_source=gh&utm_medium=referral&utm_content=&utm_campaign=Badge_grade)
 [![Nuget](https://img.shields.io/nuget/v/Solidtime.Api)](https://www.nuget.org/packages/Solidtime.Api/)
 [![Nuget](https://img.shields.io/nuget/dt/Solidtime.Api)](https://www.nuget.org/packages/Solidtime.Api/)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
@@ -31,7 +32,7 @@ var client = new SolidtimeClient(new SolidtimeClientOptions
 
 // Get current user information
 var me = await client.Me.GetAsync(CancellationToken.None);
-Console.WriteLine($"Hello, {me.Data.Name}!");
+Console.WriteLine($"Hello, {me.Data.Name}!", );
 
 // Get organizations
 var organizations = await client.Organizations.GetAsync(CancellationToken.None);
@@ -216,6 +217,77 @@ Contributions are welcome! Please:
 5. Submit a pull request
 
 Refer to the Solidtime API documentation for endpoint details: https://docs.solidtime.io/api-reference
+
+### Running Tests
+
+The test project requires configuration via user secrets. Set up your test environment:
+
+**Step 1: Find Your Organization ID**
+
+We've included a helper script to guide you:
+
+```powershell
+# Run the helper script (it will prompt for your API token)
+.\GetOrganizationId.ps1
+
+# Or provide the token directly
+.\GetOrganizationId.ps1 -ApiToken "your-api-token"
+```
+
+**Alternatively, find it manually:**
+1. Log into Solidtime at https://app.solidtime.io
+2. Look at the URL in your browser
+3. The URL will be: `https://app.solidtime.io/teams/{YOUR-ORGANIZATION-ID}/...`
+4. Copy the UUID from the URL (the part after `/teams/`)
+5. Note: The Solidtime UI uses "teams" in the URL path, but the API uses "organizations"
+
+**Step 2: Configure User Secrets**
+
+```bash
+cd Solidtime.Api.Test
+
+# Set your API token (required)
+dotnet user-secrets set "Configuration:ApiToken" "your-api-token"
+
+# Set your organization ID (required for most tests)
+dotnet user-secrets set "Configuration:SampleOrganizationId" "your-organization-uuid"
+
+# Optional: Set sample IDs to speed up tests
+dotnet user-secrets set "Configuration:SampleProjectId" "project-uuid"
+dotnet user-secrets set "Configuration:SampleClientId" "client-uuid"
+```
+
+**Step 3: Run Tests**
+
+```bash
+dotnet test
+```
+
+### Publishing to NuGet (Maintainers Only)
+
+This repository includes a PowerShell script for publishing packages to NuGet.org:
+
+1. Create a file named `nuget-key.txt` in the solution root containing your NuGet API key
+   - Get your API key from: https://www.nuget.org/account/apikeys
+   - This file is .gitignored and will not be committed
+2. Run the publish script:
+   ```powershell
+   # Run all tests and publish
+   .\Publish.ps1
+   
+   # Skip tests and publish (not recommended)
+   .\Publish.ps1 -SkipTests
+   
+   # Publish a Debug build (not recommended for production)
+   .\Publish.ps1 -Configuration Debug
+   ```
+
+The script will:
+- ? Clean and restore the project
+- ? Build in Release configuration
+- ? Run all unit tests (unless -SkipTests is specified)
+- ? Pack the NuGet package with symbols
+- ? Publish to NuGet.org automatically
 
 ## License
 

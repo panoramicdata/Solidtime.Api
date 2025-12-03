@@ -3,12 +3,17 @@
     <Platform Name="Any CPU" />
     <Platform Name="x86" />
   </Configurations>
+  <Folder Name="/.github/">
+    <File Path=".github/copilot-instructions.md" />
+  </Folder>
   <Folder Name="/Solution Items/">
     <File Path=".editorconfig" />
     <File Path="exclusions.dic" />
     <File Path="global.json" />
     <File Path="LICENSE" />
     <File Path="MASTER_PLAN.md" />
+    <File Path="nuget-key.txt" />
+    <File Path="Publish.ps1" />
     <File Path="README.md" />
     <File Path="SECURITY.md" />
     <File Path="version.json" />

@@ -1,5 +1,3 @@
-using System.Text.Json.Serialization;
-
 namespace Solidtime.Api.Models;
 
 /// <summary>
@@ -8,7 +6,7 @@ namespace Solidtime.Api.Models;
 public class ProjectMemberUpdateRequest
 {
 	/// <summary>
-	/// Gets or sets the billable rate for this project member (in cents)
+	/// The billable rate for this project member (in cents)
 	/// </summary>
 	[JsonPropertyName("billable_rate")]
 	public int? BillableRate { get; set; }

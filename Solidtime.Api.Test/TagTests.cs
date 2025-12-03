@@ -1,9 +1,4 @@
-using AwesomeAssertions;
 using Solidtime.Api.Models;
-using System;
-using System.Linq;
-using System.Threading.Tasks;
-using Xunit;
 
 namespace Solidtime.Api.Test;
 
@@ -106,7 +101,8 @@ public class TagTests(ITestOutputHelper testOutputHelper, Fixture fixture)
 			.GetAsync(organizationId, 1, 5, CancellationToken);
 
 		result.Should().NotBeNull();
-		result.Meta.CurrentPage.Should().Be(1);
+		result.Meta.Should().NotBeNull();
+		result.Meta!.CurrentPage.Should().Be(1);
 		result.Meta.PerPage.Should().Be(5);
 		result.Data.Count.Should().BeLessThanOrEqualTo(5);
 	}
@@ -126,9 +122,12 @@ public class TagTests(ITestOutputHelper testOutputHelper, Fixture fixture)
 		if (result.Data.Count != 0)
 		{
 			var tag = result.Data.First();
-			tag.CreatedAt.Should().BeBefore(DateTimeOffset.UtcNow);
-			tag.UpdatedAt.Should().BeBefore(DateTimeOffset.UtcNow);
-			tag.UpdatedAt.Should().BeOnOrAfter(tag.CreatedAt);
+			tag.CreatedAt.Should().NotBeNull();
+			tag.CreatedAt!.Value.Should().BeBefore(DateTimeOffset.UtcNow);
+
+			tag.UpdatedAt.Should().NotBeNull();
+			tag.UpdatedAt!.Value.Should().BeBefore(DateTimeOffset.UtcNow);
+			tag.UpdatedAt.Value.Should().BeOnOrAfter(tag.CreatedAt.Value);
 		}
 	}
 }

@@ -1,9 +1,7 @@
-using System;
-using System.Net.Http;
-using System.Text.Json;
-using System.Text.Json.Serialization;
 using Refit;
 using Solidtime.Api.Interfaces;
+using System.Net.Http;
+using System.Text.Json;
 
 namespace Solidtime.Api;
 

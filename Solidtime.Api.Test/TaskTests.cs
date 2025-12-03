@@ -1,9 +1,4 @@
-using AwesomeAssertions;
 using Solidtime.Api.Models;
-using System;
-using System.Linq;
-using System.Threading.Tasks;
-using Xunit;
 
 namespace Solidtime.Api.Test;
 
@@ -122,7 +117,8 @@ public class TaskTests(ITestOutputHelper testOutputHelper, Fixture fixture)
 			.GetAsync(organizationId, 1, 5, CancellationToken);
 
 		result.Should().NotBeNull();
-		result.Meta.CurrentPage.Should().Be(1);
+		result.Meta.Should().NotBeNull();
+		result.Meta!.CurrentPage.Should().Be(1);
 		result.Meta.PerPage.Should().Be(5);
 		result.Data.Count.Should().BeLessThanOrEqualTo(5);
 	}
@@ -142,9 +138,11 @@ public class TaskTests(ITestOutputHelper testOutputHelper, Fixture fixture)
 		if (result.Data.Count != 0)
 		{
 			var task = result.Data.First();
-			task.CreatedAt.Should().BeBefore(DateTimeOffset.UtcNow);
-			task.UpdatedAt.Should().BeBefore(DateTimeOffset.UtcNow);
-			task.UpdatedAt.Should().BeOnOrAfter(task.CreatedAt);
+			task.CreatedAt.Should().NotBeNull();
+			task.CreatedAt!.Value.Should().BeBefore(DateTimeOffset.UtcNow);
+			task.UpdatedAt.Should().NotBeNull();
+			task.UpdatedAt!.Value.Should().BeBefore(DateTimeOffset.UtcNow);
+			task.UpdatedAt.Value.Should().BeOnOrAfter(task.CreatedAt.Value);
 		}
 	}
 }

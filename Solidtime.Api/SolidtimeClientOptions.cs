@@ -1,6 +1,5 @@
-using System;
-using System.Text.Json.Serialization;
 using Microsoft.Extensions.Logging;
+using Microsoft.Extensions.Logging.Abstractions;
 
 namespace Solidtime.Api;
 
@@ -29,7 +28,7 @@ public class SolidtimeClientOptions
 	/// <summary>
 	/// The logger for diagnostic information
 	/// </summary>
-	public ILogger? Logger { get; set; }
+	public ILogger Logger { get; set; } = NullLogger.Instance;
 
 	/// <summary>
 	/// The behavior for unmapped JSON members

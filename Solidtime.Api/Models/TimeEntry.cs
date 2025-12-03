@@ -1,20 +1,10 @@
-using System;
-using System.Collections.Generic;
-using System.Text.Json.Serialization;
-
 namespace Solidtime.Api.Models;
 
 /// <summary>
 /// Represents a time entry in the Solidtime system
 /// </summary>
-public class TimeEntry
+public class TimeEntry : SolidtimeEntityBase
 {
-	/// <summary>
-	/// The unique identifier for the time entry
-	/// </summary>
-	[JsonPropertyName("id")]
-	public required string Id { get; set; }
-
 	/// <summary>
 	/// The description of the time entry
 	/// </summary>
@@ -74,16 +64,4 @@ public class TimeEntry
 	/// </summary>
 	[JsonPropertyName("tags")]
 	public List<string>? Tags { get; set; }
-
-	/// <summary>
-	/// The date and time when the time entry was created
-	/// </summary>
-	[JsonPropertyName("created_at")]
-	public required DateTimeOffset CreatedAt { get; set; }
-
-	/// <summary>
-	/// The date and time when the time entry was last updated
-	/// </summary>
-	[JsonPropertyName("updated_at")]
-	public required DateTimeOffset UpdatedAt { get; set; }
 }

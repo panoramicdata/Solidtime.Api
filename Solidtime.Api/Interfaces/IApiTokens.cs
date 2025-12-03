@@ -1,4 +1,3 @@
-using System.Collections.Generic;
 using System.Threading;
 using System.Threading.Tasks;
 using Refit;
@@ -39,6 +38,6 @@ public interface IApiTokens
 	/// <returns>A task representing the async operation</returns>
 	[Delete("/v1/users/me/api-tokens/{tokenId}")]
 	Task RevokeAsync(
-		[AliasAs("tokenId")] int tokenId,
+		[AliasAs("tokenId")] string tokenId,
 		CancellationToken cancellationToken);
 }

@@ -1,10 +1,7 @@
-using System;
-using System.Text.Json.Serialization;
-using System.Threading;
-using System.Threading.Tasks;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
-using Xunit;
+using System.Text.Json.Serialization;
+using System.Threading;
 using Xunit.Microsoft.DependencyInjection.Abstracts;
 
 namespace Solidtime.Api.Test;
@@ -46,10 +43,12 @@ public class SolidtimeTest : TestBed<Fixture>
 		ArgumentNullException.ThrowIfNull(testOutputHelper);
 		ArgumentNullException.ThrowIfNull(fixture);
 
-		// Logger
-		var loggerFactory = fixture
-			.GetService<ILoggerFactory>(testOutputHelper)
-			?? throw new InvalidOperationException("LoggerFactory is null");
+		// Logger - create a logger factory with XUnit output
+		var loggerFactory = LoggerFactory.Create(builder =>
+		{
+			builder.SetMinimumLevel(LogLevel.Debug);
+			builder.AddProvider(new XunitLoggerProvider(testOutputHelper));
+		});
 		Logger = loggerFactory.CreateLogger(GetType());
 
 		// Configuration
@@ -57,6 +56,14 @@ public class SolidtimeTest : TestBed<Fixture>
 			.GetService<IOptions<Configuration>>(testOutputHelper)
 			?? throw new InvalidOperationException("Configuration not found.");
 		Configuration = configOptions.Value;
+
+		// Validate configuration
+		if (string.IsNullOrWhiteSpace(Configuration.ApiToken))
+		{
+			throw new InvalidOperationException(
+				"ApiToken is required. Please configure it in user secrets using: " +
+				"dotnet user-secrets set \"Configuration:ApiToken\" \"your-token-here\" --project Solidtime.Api.Test");
+		}
 
 		// Solidtime Client
 		SolidtimeClient = new SolidtimeClient(new SolidtimeClientOptions
@@ -73,19 +80,31 @@ public class SolidtimeTest : TestBed<Fixture>
 	/// Gets the organization ID for testing
 	/// </summary>
 	/// <returns>The organization ID</returns>
+	/// <exception cref="InvalidOperationException">Thrown when SampleOrganizationId is not configured</exception>
 	protected async Task<string> GetOrganizationIdAsync()
 	{
-		if (_organizationId is null)
+		if (_organizationId != null)
 		{
-			// Use configured organization ID
-			_organizationId = Configuration.SampleOrganizationId;
-			
-			// If we add a Me.GetOrganizations() method in the future, we could fetch it dynamically:
-			// var orgs = await SolidtimeClient.Me.GetOrganizationsAsync(CancellationToken);
-			// _organizationId = orgs.Data.First().Id;
+			return _organizationId;
 		}
 
-		return _organizationId;
+		// Try to use configured organization ID first
+		if (!string.IsNullOrWhiteSpace(Configuration.SampleOrganizationId))
+		{
+			_organizationId = Configuration.SampleOrganizationId;
+			return _organizationId;
+		}
+
+		// If not configured, we need to discover it
+		// Unfortunately, there's no endpoint to list all organizations the user belongs to
+		// The user must configure it in user secrets
+		throw new InvalidOperationException(
+			"SampleOrganizationId is not configured. Please set it in user secrets using: " +
+			"dotnet user-secrets set \"Configuration:SampleOrganizationId\" \"your-org-id\" --project Solidtime.Api.Test\n\n" +
+			"You can find your organization ID by:\n" +
+			"1. Logging into Solidtime (https://app.solidtime.io)\n" +
+			"2. Navigating to your organization settings\n" +
+			"3. The organization ID is in the URL: /organizations/{organization-id}/settings");
 	}
 
 	/// <summary>
@@ -101,12 +120,16 @@ public class SolidtimeTest : TestBed<Fixture>
 		}
 
 		// Otherwise, fetch from API
-		// TODO: Implement once IProjects interface is created
-		// var organizationId = await GetOrganizationIdAsync();
-		// var projects = await SolidtimeClient.Projects.GetAsync(organizationId, null, null, CancellationToken);
-		// return projects.Data.First().Id;
+		var organizationId = await GetOrganizationIdAsync();
+		var projects = await SolidtimeClient.Projects.GetAsync(organizationId, null, null, CancellationToken);
 		
-		throw new InvalidOperationException("SampleProjectId not configured in user secrets");
+		if (projects.Data.Count == 0)
+		{
+			throw new InvalidOperationException(
+				"No projects found in the organization. Please create a project first or configure SampleProjectId in user secrets.");
+		}
+		
+		return projects.Data.First().Id;
 	}
 
 	/// <summary>
@@ -122,11 +145,15 @@ public class SolidtimeTest : TestBed<Fixture>
 		}
 
 		// Otherwise, fetch from API
-		// TODO: Implement once IClients interface is created
-		// var organizationId = await GetOrganizationIdAsync();
-		// var clients = await SolidtimeClient.Clients.GetAsync(organizationId, CancellationToken);
-		// return clients.Data.First().Id;
+		var organizationId = await GetOrganizationIdAsync();
+		var clients = await SolidtimeClient.Clients.GetAsync(organizationId, null, null, CancellationToken);
 		
-		throw new InvalidOperationException("SampleClientId not configured in user secrets");
+		if (clients.Data.Count == 0)
+		{
+			throw new InvalidOperationException(
+				"No clients found in the organization. Please create a client first or configure SampleClientId in user secrets.");
+		}
+		
+		return clients.Data.First().Id;
 	}
 }

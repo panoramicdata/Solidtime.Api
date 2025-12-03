@@ -1,5 +1,24 @@
 # GitHub Copilot Instructions for Solidtime.Api
 
+## 🚨 CRITICAL RULES - READ FIRST 🚨
+
+### NEVER SKIP TESTS
+- **NEVER** suggest skipping, disabling, or commenting out failing tests
+- **NEVER** use `Skip = "reason"` on tests unless explicitly requested by the user
+- **ALWAYS** fix the root cause of test failures - tests exist to catch issues
+- If a test fails, investigate and fix the underlying problem
+- If you don't know how to fix it, ask for clarification - don't bypass it
+- The only acceptable reason to skip a test is missing test data (404 from API), and even then, document it clearly
+
+### Fix Issues, Don't Hide Them
+- Unmapped JSON properties? Add them to the model
+- Type mismatch? Fix the type in the model
+- Missing property? Add it with proper JSON attribute
+- 404 errors? Check if test data exists, document the requirement
+- Use `JsonExtensionData` during development to discover missing properties, then add them properly
+
+---
+
 ## Project Status
 
 **Current Phase**: ✅ Setup Complete - Ready for API Implementation
@@ -258,6 +277,13 @@ Use UserSecrets for test configuration:
   }
 }
 ```
+
+**Finding Your Organization ID:**
+The Solidtime web UI uses `/teams/{organization-id}` in URLs (note: "teams" not "organizations"):
+1. Log into https://app.solidtime.io
+2. Look at the URL - it will be: `https://app.solidtime.io/teams/{YOUR-ORG-ID}`
+3. Copy the UUID from the URL
+4. Set it in user secrets: `dotnet user-secrets set "Configuration:SampleOrganizationId" "your-uuid"`
 
 ## Common Gotchas & Tips
 

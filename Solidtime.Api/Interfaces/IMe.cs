@@ -15,7 +15,7 @@ public interface IMe
 	/// </summary>
 	/// <param name="cancellationToken">Cancellation token</param>
 	/// <returns>The current user's information</returns>
-	[Get("/v1/me")]
+	[Get("/v1/users/me")]
 	Task<DataWrapper<User>> GetAsync(
 		CancellationToken cancellationToken);
 }

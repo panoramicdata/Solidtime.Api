@@ -1,7 +1,4 @@
-using System.Threading.Tasks;
-using AwesomeAssertions;
 using Solidtime.Api.Models;
-using Xunit;
 
 namespace Solidtime.Api.Test;
 
@@ -71,8 +68,11 @@ public class OrganizationTests(ITestOutputHelper testOutputHelper, Fixture fixtu
 			.Organizations
 			.GetAsync(organizationId, CancellationToken);
 
-		result.Data.CreatedAt.Should().BeBefore(System.DateTimeOffset.UtcNow);
-		result.Data.UpdatedAt.Should().BeBefore(System.DateTimeOffset.UtcNow);
-		result.Data.UpdatedAt.Should().BeOnOrAfter(result.Data.CreatedAt);
+		result.Data.CreatedAt.Should().NotBeNull();
+		result.Data.CreatedAt!.Value.Should().BeBefore(DateTimeOffset.UtcNow);
+		
+		result.Data.UpdatedAt.Should().NotBeNull();
+		result.Data.UpdatedAt!.Value.Should().BeBefore(DateTimeOffset.UtcNow);
+		result.Data.UpdatedAt.Value.Should().BeOnOrAfter(result.Data.CreatedAt.Value);
 	}
 }

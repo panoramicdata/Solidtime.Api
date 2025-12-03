@@ -1,8 +1,4 @@
-using AwesomeAssertions;
 using Solidtime.Api.Models;
-using System;
-using System.Threading.Tasks;
-using Xunit;
 
 namespace Solidtime.Api.Test;
 
@@ -46,8 +42,10 @@ public class ApiTokenTests(ITestOutputHelper testOutputHelper, Fixture fixture)
 		createResult.Should().NotBeNull();
 		createResult.Data.Should().NotBeNull();
 		createResult.Data.Name.Should().Be(createRequest.Name);
-		createResult.Data.Token.Should().NotBeNullOrWhiteSpace();
-		createResult.Data.Id.Should().BePositive();
+		// The token value should be in either Token or PlainTextToken
+		var tokenValue = createResult.Data.Token ?? createResult.Data.PlainTextToken;
+		tokenValue.Should().NotBeNullOrWhiteSpace();
+		createResult.Data.Id.Should().NotBeNullOrWhiteSpace();
 
 		// Revoke the token
 		await SolidtimeClient

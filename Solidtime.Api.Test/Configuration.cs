@@ -11,9 +11,9 @@ public class Configuration
 	public required string ApiToken { get; init; }
 
 	/// <summary>
-	/// A sample organization ID for testing
+	/// A sample organization ID for testing (optional - will be fetched from /v1/me if not provided)
 	/// </summary>
-	public required string SampleOrganizationId { get; init; }
+	public string? SampleOrganizationId { get; init; }
 
 	/// <summary>
 	/// A sample project ID for testing

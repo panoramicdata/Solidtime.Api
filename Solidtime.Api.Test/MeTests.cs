@@ -1,7 +1,3 @@
-using System.Threading.Tasks;
-using AwesomeAssertions;
-using Xunit;
-
 namespace Solidtime.Api.Test;
 
 /// <summary>
@@ -26,20 +22,35 @@ public class MeTests(ITestOutputHelper testOutputHelper, Fixture fixture)
 		result.Data.Name.Should().NotBeNullOrWhiteSpace();
 		result.Data.Email.Should().NotBeNullOrWhiteSpace();
 		result.Data.Timezone.Should().NotBeNullOrWhiteSpace();
+		result.Data.WeekStart.Should().NotBeNullOrWhiteSpace();
 	}
 
 	/// <summary>
-	/// Tests that the current user has valid timestamps
+	/// Tests that the current user has valid timestamps if present
+	/// Note: /v1/users/me endpoint does not return created_at/updated_at
 	/// </summary>
 	[Fact]
-	public async Task Me_Get_HasValidTimestamps()
+	public async Task Me_Get_TimestampsAreOptional()
 	{
 		var result = await SolidtimeClient
 			.Me
 			.GetAsync(CancellationToken);
 
-		result.Data.CreatedAt.Should().BeBefore(System.DateTimeOffset.UtcNow);
-		result.Data.UpdatedAt.Should().BeBefore(System.DateTimeOffset.UtcNow);
-		result.Data.UpdatedAt.Should().BeOnOrAfter(result.Data.CreatedAt);
+		// The /me endpoint doesn't return timestamps, so they should be null
+		// If they are present in other endpoints, they should be valid
+		if (result.Data.CreatedAt.HasValue)
+		{
+			result.Data.CreatedAt.Value.Should().BeBefore(DateTimeOffset.UtcNow);
+		}
+		
+		if (result.Data.UpdatedAt.HasValue)
+		{
+			result.Data.UpdatedAt.Value.Should().BeBefore(DateTimeOffset.UtcNow);
+		}
+		
+		if (result.Data.CreatedAt.HasValue && result.Data.UpdatedAt.HasValue)
+		{
+			result.Data.UpdatedAt.Value.Should().BeOnOrAfter(result.Data.CreatedAt.Value);
+		}
 	}
 }
