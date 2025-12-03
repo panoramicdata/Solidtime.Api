@@ -1,5 +1,3 @@
-using Solidtime.Api.Models;
-
 namespace Solidtime.Api.Test;
 
 /// <summary>
@@ -138,13 +136,13 @@ public class ReportTests(ITestOutputHelper testOutputHelper, Fixture fixture)
 
 		result.Should().NotBeNull();
 		result.Meta.Should().NotBeNull();
-		
+
 		// The Solidtime API only populates pagination metadata when there is data
 		if (result.Data.Count > 0 || result.Meta!.CurrentPage.HasValue)
 		{
 			result.Meta!.CurrentPage.Should().Be(1);
 		}
-		
+
 		result.Data.Should().NotBeNull();
 	}
 

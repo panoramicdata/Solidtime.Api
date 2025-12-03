@@ -4,7 +4,7 @@
 
 **Last Updated**: December 3, 2025
 
-**Current Phase**: Phase 4 - Advanced Features 🚀
+**Current Phase**: Phase 4 - OpenAPI Specification Verification Audit 🔍
 
 **Completed**:
 - ✅ Phase 1: Project Setup (100%)
@@ -16,7 +16,9 @@
 - ✅ Build verification successful
 - ✅ All projects compile without errors or warnings
 
-**Next Steps**: Phase 4 - Implement Advanced Features (Reports, Charts, Imports)
+**Next Steps**: 
+- 🔍 Phase 4: Verify all Refit interfaces match OpenAPI specification exactly (CRITICAL - discovered ITasks had incorrect parameters)
+- 🚀 Phase 5: Implement Advanced Features (Reports, Charts, Imports)
 
 ---
 
@@ -416,17 +418,212 @@ Priority order based on dependencies:
 4. **Clients** - Get, GetById, Create, Update, Delete (with pagination) ✅
 5. **Projects** - Get, GetById, Create, Update, Delete (with pagination) ✅
 6. **Tags** - Get, GetById, Create, Update, Delete (with pagination) ✅
-7. **Tasks** - Get, GetById, Create, Update, Delete (with pagination) ✅
+7. **Tasks** - Get, GetById, Create, Update, Delete (**FIXED**: removed incorrect page/perPage params) ✅
 8. **TimeEntries** - Get, GetById, Create, Update, Delete (with pagination, running timer support) ✅
 9. **ProjectMembers** - Get, Create, Update, Delete ✅
 10. **Members** - Get, GetById, Update, Delete (with pagination) ✅
 
-### Next Steps - Phase 4: Advanced Features
-Ready to implement:
+### Phase 4: OpenAPI Specification Verification Audit 🔍 IN PROGRESS
+
+**Rationale**: During testing, we discovered that the `ITasks` interface had incorrect `page` and `perPage` parameters that don't exist in the OpenAPI spec. The tasks endpoint only supports `project_id` and `done` filter parameters. This suggests other interfaces may have similar discrepancies from copying templates without proper validation.
+
+**Goal**: Systematically verify that ALL Refit interface definitions accurately match the OpenAPI specification in `solidtime-openapi.json` and correct any discrepancies.
+
+**Estimated Time**: 5.5-7.5 hours
+
+#### 4.1 Extract OpenAPI Endpoint Specifications
+- [ ] Parse `solidtime-openapi.json` systematically for all endpoints
+- [ ] Document each endpoint's HTTP method, path, parameters (path, query, body), and response schema
+- [ ] Create reference document `ENDPOINT_VERIFICATION.md` tracking:
+  - Expected parameters per endpoint from OpenAPI
+  - Current implementation status
+  - Discrepancies found
+
+#### 4.2 Verify Each Interface Against OpenAPI Spec
+
+**Priority Order** (based on likelihood of issues):
+
+1. **IApiTokens** - Verify all endpoints
+   - [ ] `/v1/users/me/api-tokens` GET - check for unexpected pagination params
+   - [ ] `/v1/users/me/api-tokens` POST
+   - [ ] `/v1/users/me/api-tokens/{apiToken}/revoke` POST
+   - [ ] `/v1/users/me/api-tokens/{apiToken}` DELETE
+
+2. **IMe** - Verify all endpoints
+   - [ ] `/v1/users/me` GET
+   - [ ] `/v1/users/me/memberships` GET - check for pagination params
+   - [ ] `/v1/users/me/time-entries/active` GET
+
+3. **IOrganizations** - Verify all endpoints
+   - [ ] `/v1/organizations/{organization}` GET
+   - [ ] `/v1/organizations/{organization}` PUT
+
+4. **IClients** - Verify all endpoints
+   - [ ] `/v1/organizations/{organization}/clients` GET
+     - Check for `page` param (should exist per OpenAPI line 728)
+     - Check for `archived` param (exists per OpenAPI line 736)
+     - Verify NO `per_page` param (not in spec)
+   - [ ] `/v1/organizations/{organization}/clients` POST
+   - [ ] `/v1/organizations/{organization}/clients/{client}` PUT
+   - [ ] `/v1/organizations/{organization}/clients/{client}` DELETE
+
+5. **IProjects** - Verify all endpoints
+   - [ ] `/v1/organizations/{organization}/projects` GET
+     - Confirm `page` param exists (OpenAPI line 2171)
+     - Check for `archived` param (exists per OpenAPI line 2180)
+     - Verify NO `per_page` param (not in spec)
+   - [ ] `/v1/organizations/{organization}/projects` POST
+   - [ ] `/v1/organizations/{organization}/projects/{project}` GET
+   - [ ] `/v1/organizations/{organization}/projects/{project}` PUT
+   - [ ] `/v1/organizations/{organization}/projects/{project}` DELETE
+
+6. **ITags** - Verify all endpoints
+   - [ ] `/v1/organizations/{organization}/tags` GET - verify NO pagination params (OpenAPI line 3344 shows none)
+   - [ ] `/v1/organizations/{organization}/tags` POST
+   - [ ] `/v1/organizations/{organization}/tags/{tag}` PUT
+   - [ ] `/v1/organizations/{organization}/tags/{tag}` DELETE
+
+7. **ITasks** - ✅ VERIFIED & FIXED
+   - [x] Corrected to use `project_id` and `done` filters instead of `page`/`perPage`
+   - [x] Updated tests to match corrected interface
+
+8. **ITimeEntries** - HIGH PRIORITY (complex endpoint)
+   - [ ] `/v1/organizations/{organization}/time-entries` GET
+     - **CRITICAL**: Uses `limit` and `offset` (OpenAPI lines 4004-4020), NOT page/perPage
+     - Check for filter params: `member_id`, `start`, `end`, `active`, `billable`, etc.
+     - Verify array params: `member_ids`, `client_ids`, `project_ids`, `tag_ids`, `task_ids`
+     - Check for `only_full_dates`, `rounding_type`, `rounding_minutes` params
+   - [ ] `/v1/organizations/{organization}/time-entries` POST
+   - [ ] `/v1/organizations/{organization}/time-entries` PATCH (update multiple)
+   - [ ] `/v1/organizations/{organization}/time-entries` DELETE (delete multiple with `ids` query param)
+   - [ ] `/v1/organizations/{organization}/time-entries/{timeEntry}` PUT
+   - [ ] `/v1/organizations/{organization}/time-entries/{timeEntry}` DELETE
+   - [ ] `/v1/organizations/{organization}/time-entries/export` GET
+   - [ ] `/v1/organizations/{organization}/time-entries/aggregate` GET
+   - [ ] `/v1/organizations/{organization}/time-entries/aggregate/export` GET
+
+9. **IProjectMembers** - Verify all endpoints
+   - [ ] `/v1/organizations/{organization}/projects/{project}/project-members` GET
+   - [ ] `/v1/organizations/{organization}/projects/{project}/project-members` POST
+   - [ ] `/v1/organizations/{organization}/project-members/{projectMember}` PUT
+   - [ ] `/v1/organizations/{organization}/project-members/{projectMember}` DELETE
+
+10. **IMembers** - Verify all endpoints
+    - [ ] `/v1/organizations/{organization}/members` GET - verify pagination params
+    - [ ] `/v1/organizations/{organization}/members/{member}` PUT
+    - [ ] `/v1/organizations/{organization}/members/{member}` DELETE
+      - Check for `delete_related` query param (OpenAPI line 1862)
+    - [ ] `/v1/organizations/{organization}/members/{member}/invite-placeholder` POST
+    - [ ] `/v1/organizations/{organization}/members/{member}/make-placeholder` POST
+    - [ ] `/v1/organizations/{organization}/member/{member}/merge-into` POST
+
+11. **IReports** - Verify all endpoints (if implemented)
+    - [ ] `/v1/organizations/{organization}/reports` GET
+    - [ ] `/v1/organizations/{organization}/reports` POST
+    - [ ] `/v1/organizations/{organization}/reports/{report}` GET
+    - [ ] `/v1/organizations/{organization}/reports/{report}` PUT
+    - [ ] `/v1/organizations/{organization}/reports/{report}` DELETE
+    - [ ] `/v1/public/reports` GET
+
+12. **ICharts** - Verify all endpoints (if implemented)
+    - [ ] `/v1/organizations/{organization}/charts/weekly-project-overview` GET
+    - [ ] `/v1/organizations/{organization}/charts/latest-tasks` GET
+    - [ ] `/v1/organizations/{organization}/charts/last-seven-days` GET
+    - [ ] `/v1/organizations/{organization}/charts/latest-team-activity` GET
+    - [ ] `/v1/organizations/{organization}/charts/daily-tracked-hours` GET
+    - [ ] `/v1/organizations/{organization}/charts/total-weekly-time` GET
+    - [ ] `/v1/organizations/{organization}/charts/total-weekly-billable-time` GET
+    - [ ] `/v1/organizations/{organization}/charts/total-weekly-billable-amount` GET
+    - [ ] `/v1/organizations/{organization}/charts/weekly-history` GET
+
+13. **IImports** - Verify all endpoints (if implemented)
+    - [ ] `/v1/organizations/{organization}/importers` GET
+    - [ ] `/v1/organizations/{organization}/import` POST
+
+#### 4.3 Common Issues to Identify
+
+**Pagination Pattern Discrepancies**:
+- [ ] Identify interfaces incorrectly using `page`/`perPage` when spec doesn't define them
+- [ ] Verify correct use of `limit`/`offset` pattern (TimeEntries)
+- [ ] Check for endpoints that return simple arrays vs paginated responses
+- [ ] Document which endpoints support pagination and which don't
+
+**Parameter Issues**:
+- [ ] Verify all `[AliasAs]` attributes match OpenAPI parameter names (snake_case)
+- [ ] Check for missing `[AliasAs]` on path parameters
+- [ ] Verify query parameter names match exactly
+- [ ] Confirm optional parameters use nullable types (`?`)
+- [ ] Ensure required parameters are non-nullable
+
+**Array/Collection Parameters**:
+- [ ] Verify array parameters are defined correctly (e.g., `member_ids[]`, `project_ids[]`)
+- [ ] Check Refit attribute usage for array parameters
+- [ ] Test array parameter serialization
+
+**Return Type Mismatches**:
+- [ ] Verify correct use of `DataWrapper<T>` vs `PaginatedResponse<T>` vs plain types
+- [ ] Check for endpoints returning plain arrays (e.g., Charts endpoints)
+- [ ] Ensure proper `Task` vs `Task<T>` return types
+
+#### 4.4 Fix All Identified Issues
+
+For each discrepancy found:
+- [ ] Update interface method signature to match OpenAPI spec exactly
+- [ ] Add/update `[AliasAs]` attributes for parameter name mapping
+- [ ] Correct return types (DataWrapper vs PaginatedResponse vs plain)
+- [ ] Update XML documentation to note any API quirks or limitations
+- [ ] Update corresponding test files to match new signatures
+- [ ] Remove tests for unsupported features
+- [ ] Add tests for newly discovered parameters
+
+#### 4.5 Validation & Documentation
+
+- [ ] Build solution - verify zero compilation errors
+- [ ] Run all unit tests - verify all passing
+- [ ] Run integration tests against live API
+- [ ] Create `ENDPOINT_VERIFICATION.md` summary document with:
+  - All interfaces verified
+  - All discrepancies found and fixed
+  - API limitations and quirks discovered
+  - Recommendations for future development
+- [ ] Update `MASTER_PLAN.md` with completion status
+- [ ] Update interface XML documentation
+- [ ] Update README.md if needed
+
+#### 4.6 Known Findings (To Be Documented)
+
+**Already Discovered**:
+- ✅ **ITasks**: Incorrectly had `page`/`perPage` parameters - spec only supports `project_id` and `done` filters
+- Tasks endpoint returns paginated response structure but doesn't accept pagination control parameters
+- API uses default page size of 500 for tasks
+
+**To Investigate**:
+- ITimeEntries likely uses `limit`/`offset` instead of `page`/`perPage` (different pagination pattern)
+- ITags may not support pagination at all (similar to Tasks)
+- IClients and IProjects may only support `page` without `perPage`
+- Array parameters (`member_ids`, `project_ids`, etc.) may need special Refit configuration
+
+#### Success Criteria
+✅ All Refit interfaces match OpenAPI specification exactly  
+✅ All parameter names use correct snake_case with proper [AliasAs] attributes  
+✅ Correct pagination patterns used per endpoint (page/perPage vs limit/offset vs none)  
+✅ Proper return types (DataWrapper vs PaginatedResponse vs plain)  
+✅ All tests compile and pass  
+✅ No incorrect or missing parameters in any interface  
+✅ Documentation updated with API quirks and limitations  
+✅ Verification document created as reference
+
+---
+
+### Phase 5: Advanced Features (PENDING Phase 4 Completion)
+
+**NOTE**: This phase should NOT begin until Phase 4 (OpenAPI Verification) is complete to ensure all new features are implemented correctly from the start.
+
+Ready to implement after Phase 4:
 - **Reports API** - Create and manage reports, export functionality
-- **Charts API** - Weekly project overview, weekly hours chart
+- **Charts API** - Weekly project overview, weekly hours chart  
 - **Imports API** - Toggl import functionality
 
-These features will build on the solid foundation of Phase 3's core endpoints.
+These features will build on the verified foundation from Phase 4.
 
 ### Setup Phase Complete (December 3, 2025)

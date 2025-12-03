@@ -1,5 +1,3 @@
-using Solidtime.Api.Models;
-
 namespace Solidtime.Api.Test;
 
 /// <summary>
@@ -156,9 +154,18 @@ public class ProjectTests(ITestOutputHelper testOutputHelper, Fixture fixture)
 		if (result.Data.Count > 0 || result.Meta!.CurrentPage.HasValue)
 		{
 			result.Meta!.CurrentPage.Should().Be(1);
+			
+			// Log the actual per_page value returned
+			Logger.LogInformation("Requested perPage: 5, API returned PerPage: {PerPage}, Actual count: {Count}", 
+				result.Meta.PerPage, result.Data.Count);
+			
+			// The API should respect our per_page parameter
+			if (result.Meta.PerPage.HasValue)
+			{
+				result.Meta.PerPage.Should().Be(5, "because we requested 5 items per page");
+			}
 		}
 		
-		// Note: API may ignore perPage parameter and use its own default
 		result.Data.Should().NotBeNull();
 	}
 

@@ -1,9 +1,5 @@
-using Microsoft.Extensions.Logging;
-using Refit;
-using Solidtime.Api.Models;
 using System.Net;
 using System.Threading;
-using System.Threading.Tasks;
 
 namespace Solidtime.Api.Test;
 

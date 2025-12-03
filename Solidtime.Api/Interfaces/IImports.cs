@@ -1,8 +1,3 @@
-using Refit;
-using Solidtime.Api.Models;
-using System.Threading;
-using System.Threading.Tasks;
-
 namespace Solidtime.Api.Interfaces;
 
 /// <summary>

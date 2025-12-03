@@ -1,5 +1,3 @@
-using Solidtime.Api.Models;
-
 namespace Solidtime.Api.Test;
 
 /// <summary>

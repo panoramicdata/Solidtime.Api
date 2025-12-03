@@ -1,4 +1,3 @@
-using Solidtime.Api.Models;
 using System.Globalization;
 
 namespace Solidtime.Api.Test;
@@ -32,7 +31,7 @@ public class ChartTests(ITestOutputHelper testOutputHelper, Fixture fixture)
 	public async Task Charts_GetWeeklyHours_WithDateRange_Succeeds()
 	{
 		var organizationId = await GetOrganizationIdAsync();
-		
+
 		// Get last 4 weeks of data
 		var endDate = DateTimeOffset.UtcNow;
 		var startDate = endDate.AddDays(-28);
@@ -46,7 +45,7 @@ public class ChartTests(ITestOutputHelper testOutputHelper, Fixture fixture)
 				CancellationToken);
 
 		result.Should().NotBeNull();
-		
+
 		// If there is data, verify the structure
 		if (result.Count > 0)
 		{
@@ -107,7 +106,7 @@ public class ChartTests(ITestOutputHelper testOutputHelper, Fixture fixture)
 	public async Task Charts_GetWeeklyProjectOverview_WithDateRange_Succeeds()
 	{
 		var organizationId = await GetOrganizationIdAsync();
-		
+
 		// Get last 4 weeks of data
 		var endDate = DateTimeOffset.UtcNow;
 		var startDate = endDate.AddDays(-28);
@@ -121,7 +120,7 @@ public class ChartTests(ITestOutputHelper testOutputHelper, Fixture fixture)
 				CancellationToken);
 
 		result.Should().NotBeNull();
-		
+
 		// If there is data, verify the structure
 		if (result.Count > 0)
 		{
@@ -161,12 +160,14 @@ public class ChartTests(ITestOutputHelper testOutputHelper, Fixture fixture)
 
 	/// <summary>
 	/// Tests that chart data can be retrieved for a specific month
+	/// NOTE: This test may fail with 404 if the charts feature is not enabled/available in the test organization.
+	/// The charts endpoints may be a premium feature or require specific configuration in Solidtime.
 	/// </summary>
 	[Fact]
 	public async Task Charts_GetDataForSpecificMonth_Succeeds()
 	{
 		var organizationId = await GetOrganizationIdAsync();
-		
+
 		// Get data for current month
 		var now = DateTimeOffset.UtcNow;
 		var startDate = new DateTimeOffset(now.Year, now.Month, 1, 0, 0, 0, TimeSpan.Zero);

@@ -1,8 +1,3 @@
-using Refit;
-using Solidtime.Api.Models;
-using System.Threading;
-using System.Threading.Tasks;
-
 namespace Solidtime.Api.Interfaces;
 
 /// <summary>
@@ -22,7 +17,7 @@ public interface IMembers
 	Task<PaginatedResponse<Member>> GetAsync(
 		[AliasAs("organization")] string organizationId,
 		[Query] int? page,
-		[Query("per_page")] int? perPage,
+		[Query, AliasAs("per_page")] int? perPage,
 		CancellationToken cancellationToken);
 
 	/// <summary>

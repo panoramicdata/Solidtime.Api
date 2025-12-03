@@ -1,8 +1,3 @@
-using Refit;
-using Solidtime.Api.Models;
-using System.Threading;
-using System.Threading.Tasks;
-
 namespace Solidtime.Api.Interfaces;
 
 /// <summary>
@@ -14,15 +9,15 @@ public interface ITasks
 	/// Gets all tasks in an organization
 	/// </summary>
 	/// <param name="organizationId">The organization ID</param>
-	/// <param name="page">Page number for pagination (optional)</param>
-	/// <param name="perPage">Number of items per page (optional)</param>
+	/// <param name="projectId">Filter by project ID (optional)</param>
+	/// <param name="done">Filter by done status: true, false, or all (optional)</param>
 	/// <param name="cancellationToken">Cancellation token</param>
 	/// <returns>A paginated list of tasks</returns>
 	[Get("/v1/organizations/{organization}/tasks")]
 	Task<PaginatedResponse<TaskModel>> GetAsync(
 		[AliasAs("organization")] string organizationId,
-		[Query] int? page,
-		[Query("per_page")] int? perPage,
+		[Query, AliasAs("project_id")] string? projectId,
+		[Query] string? done,
 		CancellationToken cancellationToken);
 
 	/// <summary>

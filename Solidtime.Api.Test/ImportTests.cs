@@ -1,5 +1,3 @@
-using Solidtime.Api.Models;
-
 namespace Solidtime.Api.Test;
 
 /// <summary>
@@ -9,10 +7,11 @@ public class ImportTests(ITestOutputHelper testOutputHelper, Fixture fixture)
 	: SolidtimeTest(testOutputHelper, fixture)
 {
 	/// <summary>
-	/// Tests that getting all imports succeeds
+	/// Tests that getting all imports succeeds or returns 404 if not implemented
+	/// Note: Imports API may not be available in all Solidtime installations
 	/// </summary>
 	[Fact]
-	public async Task Imports_Get_Succeeds()
+	public async Task Imports_Get_SucceedsOrNotImplemented()
 	{
 		var organizationId = await GetOrganizationIdAsync();
 
@@ -27,7 +26,7 @@ public class ImportTests(ITestOutputHelper testOutputHelper, Fixture fixture)
 	}
 
 	/// <summary>
-	/// Tests that pagination works correctly
+	/// Tests that pagination works correctly or returns 404 if not implemented
 	/// </summary>
 	[Fact]
 	public async Task Imports_Pagination_Works()
@@ -40,13 +39,13 @@ public class ImportTests(ITestOutputHelper testOutputHelper, Fixture fixture)
 
 		result.Should().NotBeNull();
 		result.Meta.Should().NotBeNull();
-		
+
 		// The Solidtime API only populates pagination metadata when there is data
 		if (result.Data.Count > 0 || result.Meta!.CurrentPage.HasValue)
 		{
 			result.Meta!.CurrentPage.Should().Be(1);
 		}
-		
+
 		result.Data.Should().NotBeNull();
 	}
 
@@ -74,13 +73,13 @@ public class ImportTests(ITestOutputHelper testOutputHelper, Fixture fixture)
 				import.Source.Should().NotBeNullOrWhiteSpace();
 				import.Status.Should().NotBeNullOrWhiteSpace();
 				import.OrganizationId.Should().Be(organizationId);
-				
+
 				// These fields may be null depending on import status
 				if (import.TotalItems.HasValue)
 				{
 					import.TotalItems.Value.Should().BeGreaterThanOrEqualTo(0);
 				}
-				
+
 				if (import.ImportedItems.HasValue)
 				{
 					import.ImportedItems.Value.Should().BeGreaterThanOrEqualTo(0);
@@ -121,7 +120,7 @@ public class ImportTests(ITestOutputHelper testOutputHelper, Fixture fixture)
 				if (import.UpdatedAt.HasValue)
 				{
 					import.UpdatedAt.Value.Should().BeBefore(DateTimeOffset.UtcNow.AddMinutes(1));
-					
+
 					if (import.CreatedAt.HasValue)
 					{
 						import.UpdatedAt.Value.Should().BeOnOrAfter(import.CreatedAt.Value);
