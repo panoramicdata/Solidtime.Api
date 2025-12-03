@@ -56,6 +56,9 @@ public class SolidtimeClient : IDisposable
 		TimeEntries = RestService.For<ITimeEntries>(_httpClient, refitSettings);
 		ProjectMembers = RestService.For<IProjectMembers>(_httpClient, refitSettings);
 		Members = RestService.For<IMembers>(_httpClient, refitSettings);
+		Reports = RestService.For<IReports>(_httpClient, refitSettings);
+		Charts = RestService.For<ICharts>(_httpClient, refitSettings);
+		Imports = RestService.For<IImports>(_httpClient, refitSettings);
 	}
 
 	/// <summary>
@@ -107,6 +110,21 @@ public class SolidtimeClient : IDisposable
 	/// Gets the API for managing organization members
 	/// </summary>
 	public IMembers Members { get; }
+
+	/// <summary>
+	/// Gets the API for managing reports
+	/// </summary>
+	public IReports Reports { get; }
+
+	/// <summary>
+	/// Gets the API for accessing chart data
+	/// </summary>
+	public ICharts Charts { get; }
+
+	/// <summary>
+	/// Gets the API for managing imports from other time tracking systems
+	/// </summary>
+	public IImports Imports { get; }
 
 	/// <summary>
 	/// Disposes the client and releases resources
