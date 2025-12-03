@@ -6,22 +6,28 @@ namespace Solidtime.Api.Models;
 public class TimeEntryStoreRequest
 {
 	/// <summary>
+	/// The member ID (user) for this time entry
+	/// </summary>
+	[JsonPropertyName("member_id")]
+	public required string MemberId { get; set; }
+
+	/// <summary>
 	/// The description of the time entry
 	/// </summary>
 	[JsonPropertyName("description")]
 	public string? Description { get; set; }
 
 	/// <summary>
-	/// The start date and time
+	/// The start date and time (ISO 8601 format, UTC)
 	/// </summary>
 	[JsonPropertyName("start")]
-	public required DateTimeOffset Start { get; set; }
+	public required string Start { get; set; }
 
 	/// <summary>
-	/// The end date and time (optional for running timer)
+	/// The end date and time (optional for running timer, ISO 8601 format, UTC)
 	/// </summary>
 	[JsonPropertyName("end")]
-	public DateTimeOffset? End { get; set; }
+	public string? End { get; set; }
 
 	/// <summary>
 	/// The project ID this time entry belongs to
@@ -39,7 +45,7 @@ public class TimeEntryStoreRequest
 	/// Gets or sets whether the time entry is billable
 	/// </summary>
 	[JsonPropertyName("billable")]
-	public bool? Billable { get; set; }
+	public required bool Billable { get; set; }
 
 	/// <summary>
 	/// The list of tag IDs to associate with this time entry

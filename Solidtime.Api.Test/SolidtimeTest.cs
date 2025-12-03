@@ -199,4 +199,22 @@ public class SolidtimeTest : TestBed<Fixture>
 		
 		return tags.Data.First().Id;
 	}
+
+	/// <summary>
+	/// Gets the current user's member ID for the organization
+	/// </summary>
+	/// <returns>The member ID</returns>
+	protected async Task<string> GetMemberIdAsync()
+	{
+		var organizationId = await GetOrganizationIdAsync();
+		var members = await SolidtimeClient.Members.GetAsync(organizationId, null, null, CancellationToken);
+		
+		if (members.Data.Count == 0)
+		{
+			throw new InvalidOperationException("No members found in the organization.");
+		}
+		
+		// Return the first member (usually the current user)
+		return members.Data.First().Id;
+	}
 }
