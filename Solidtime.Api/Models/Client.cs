@@ -18,8 +18,8 @@ public class Client : SolidtimeEntityBase
 	public required bool IsArchived { get; set; }
 
 	/// <summary>
-	/// The organization ID this client belongs to
+	/// The organization ID this client belongs to (not always returned by the API)
 	/// </summary>
 	[JsonPropertyName("organization_id")]
-	public required string OrganizationId { get; set; }
+	public string? OrganizationId { get; set; }
 }

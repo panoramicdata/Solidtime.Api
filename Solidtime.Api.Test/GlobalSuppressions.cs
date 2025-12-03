@@ -9,3 +9,8 @@ using System.Diagnostics.CodeAnalysis;
 	"CA1707:Identifiers should not contain underscores",
 	Justification = "Fine for unit tests"
 )]
+[assembly: SuppressMessage(
+	"Performance",
+	"CA1848:Use the LoggerMessage delegates",
+	Justification = "Performance is not critical in test code"
+)]

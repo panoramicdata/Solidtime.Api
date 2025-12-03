@@ -26,19 +26,6 @@ public interface IClients
 		CancellationToken cancellationToken);
 
 	/// <summary>
-	/// Gets a specific client by ID
-	/// </summary>
-	/// <param name="organizationId">The organization ID</param>
-	/// <param name="clientId">The client ID</param>
-	/// <param name="cancellationToken">Cancellation token</param>
-	/// <returns>The client</returns>
-	[Get("/v1/organizations/{organization}/clients/{client}")]
-	Task<DataWrapper<Client>> GetByIdAsync(
-		[AliasAs("organization")] string organizationId,
-		[AliasAs("client")] string clientId,
-		CancellationToken cancellationToken);
-
-	/// <summary>
 	/// Creates a new client
 	/// </summary>
 	/// <param name="organizationId">The organization ID</param>
@@ -59,7 +46,7 @@ public interface IClients
 	/// <param name="request">The client update request</param>
 	/// <param name="cancellationToken">Cancellation token</param>
 	/// <returns>The updated client</returns>
-	[Patch("/v1/organizations/{organization}/clients/{client}")]
+	[Put("/v1/organizations/{organization}/clients/{client}")]
 	Task<DataWrapper<Client>> UpdateAsync(
 		[AliasAs("organization")] string organizationId,
 		[AliasAs("client")] string clientId,

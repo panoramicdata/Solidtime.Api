@@ -1,7 +1,7 @@
 namespace Solidtime.Api.Models;
 
 /// <summary>
-/// Request object for updating a client
+/// Request object for updating a client (PUT - full replacement)
 /// </summary>
 public class ClientUpdateRequest
 {
@@ -9,11 +9,11 @@ public class ClientUpdateRequest
 	/// The client's name
 	/// </summary>
 	[JsonPropertyName("name")]
-	public string? Name { get; set; }
+	public required string Name { get; set; }
 
 	/// <summary>
 	/// Gets or sets whether the client is archived
 	/// </summary>
 	[JsonPropertyName("is_archived")]
-	public bool? IsArchived { get; set; }
+	public required bool IsArchived { get; set; }
 }

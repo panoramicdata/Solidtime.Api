@@ -34,74 +34,95 @@ public class TaskTests(ITestOutputHelper testOutputHelper, Fixture fixture)
 	{
 		var organizationId = await GetOrganizationIdAsync();
 		var projectId = await GetProjectIdAsync();
+		string? taskId = null;
 
-		// Create
-		var createRequest = new TaskStoreRequest
+		try
 		{
-			Name = $"Test Task {Guid.NewGuid()}",
-			ProjectId = projectId
-		};
+			// Create
+			var createRequest = new TaskStoreRequest
+			{
+				Name = $"Test Task {Guid.NewGuid()}",
+				ProjectId = projectId
+			};
 
-		var createResult = await SolidtimeClient
-			.Tasks
-			.CreateAsync(organizationId, createRequest, CancellationToken);
+			var createResult = await SolidtimeClient
+				.Tasks
+				.CreateAsync(organizationId, createRequest, CancellationToken);
 
-		createResult.Should().NotBeNull();
-		createResult.Data.Should().NotBeNull();
-		createResult.Data.Name.Should().Be(createRequest.Name);
-		createResult.Data.Id.Should().NotBeNullOrWhiteSpace();
-		createResult.Data.ProjectId.Should().Be(projectId);
-		createResult.Data.IsDone.Should().BeFalse();
-		createResult.Data.OrganizationId.Should().Be(organizationId);
+			createResult.Should().NotBeNull();
+			createResult.Data.Should().NotBeNull();
+			createResult.Data.Name.Should().Be(createRequest.Name);
+			createResult.Data.Id.Should().NotBeNullOrWhiteSpace();
+			createResult.Data.ProjectId.Should().Be(projectId);
+			createResult.Data.IsDone.Should().BeFalse();
+			createResult.Data.OrganizationId.Should().Be(organizationId);
 
-		var taskId = createResult.Data.Id;
+			taskId = createResult.Data.Id;
 
-		// Get by ID
-		var getResult = await SolidtimeClient
-			.Tasks
-			.GetByIdAsync(organizationId, taskId, CancellationToken);
+			// Get by ID
+			var getResult = await SolidtimeClient
+				.Tasks
+				.GetByIdAsync(organizationId, taskId, CancellationToken);
 
-		getResult.Should().NotBeNull();
-		getResult.Data.Id.Should().Be(taskId);
-		getResult.Data.Name.Should().Be(createRequest.Name);
+			getResult.Should().NotBeNull();
+			getResult.Data.Id.Should().Be(taskId);
+			getResult.Data.Name.Should().Be(createRequest.Name);
 
-		// Update
-		var updateRequest = new TaskUpdateRequest
+			// Update
+			var updateRequest = new TaskUpdateRequest
+			{
+				Name = $"Updated Task {Guid.NewGuid()}"
+			};
+
+			var updateResult = await SolidtimeClient
+				.Tasks
+				.UpdateAsync(organizationId, taskId, updateRequest, CancellationToken);
+
+			updateResult.Should().NotBeNull();
+			updateResult.Data.Id.Should().Be(taskId);
+			updateResult.Data.Name.Should().Be(updateRequest.Name);
+
+			// Mark as done
+			var doneRequest = new TaskUpdateRequest
+			{
+				IsDone = true
+			};
+
+			var doneResult = await SolidtimeClient
+				.Tasks
+				.UpdateAsync(organizationId, taskId, doneRequest, CancellationToken);
+
+			doneResult.Data.IsDone.Should().BeTrue();
+
+			// Delete
+			await SolidtimeClient
+				.Tasks
+				.DeleteAsync(organizationId, taskId, CancellationToken);
+
+			// Verify deletion by checking it doesn't appear in the list
+			var allTasks = await SolidtimeClient
+				.Tasks
+				.GetAsync(organizationId, null, null, CancellationToken);
+
+			allTasks.Data.Should().NotContain(t => t.Id == taskId);
+		}
+		finally
 		{
-			Name = $"Updated Task {Guid.NewGuid()}"
-		};
-
-		var updateResult = await SolidtimeClient
-			.Tasks
-			.UpdateAsync(organizationId, taskId, updateRequest, CancellationToken);
-
-		updateResult.Should().NotBeNull();
-		updateResult.Data.Id.Should().Be(taskId);
-		updateResult.Data.Name.Should().Be(updateRequest.Name);
-
-		// Mark as done
-		var doneRequest = new TaskUpdateRequest
-		{
-			IsDone = true
-		};
-
-		var doneResult = await SolidtimeClient
-			.Tasks
-			.UpdateAsync(organizationId, taskId, doneRequest, CancellationToken);
-
-		doneResult.Data.IsDone.Should().BeTrue();
-
-		// Delete
-		await SolidtimeClient
-			.Tasks
-			.DeleteAsync(organizationId, taskId, CancellationToken);
-
-		// Verify deletion by checking it doesn't appear in the list
-		var allTasks = await SolidtimeClient
-			.Tasks
-			.GetAsync(organizationId, null, null, CancellationToken);
-
-		allTasks.Data.Should().NotContain(t => t.Id == taskId);
+			// Ensure cleanup even if test fails
+			if (taskId != null)
+			{
+				try
+				{
+					await SolidtimeClient
+						.Tasks
+						.DeleteAsync(organizationId, taskId, CancellationToken);
+				}
+				catch
+				{
+					// Task may already be deleted, ignore errors
+				}
+			}
+		}
 	}
 
 	/// <summary>

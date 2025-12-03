@@ -1,5 +1,6 @@
 ﻿using Microsoft.Extensions.Logging;
 using System.Linq;
+using System.Net;
 using System.Net.Http;
 using System.Net.Http.Headers;
 using System.Threading;
@@ -8,18 +9,20 @@ using System.Threading.Tasks;
 namespace Solidtime.Api;
 
 /// <summary>
-/// HTTP client handler that adds Bearer token authentication to requests
+/// HTTP client handler that adds Bearer token authentication to requests and handles rate limiting (429) with backoff
 /// </summary>
-public partial class AuthenticatedHttpClientHandler : DelegatingHandler
+public partial class AuthenticatedBackingOffHttpClientHandler : DelegatingHandler
 {
 	private readonly SolidtimeClientOptions _options;
 	private readonly ILogger _logger;
+	private const int MaxRetries = 3;
+	private const int InitialBackoffMs = 1000;
 
 	/// <summary>
-	/// Initializes a new instance of the <see cref="AuthenticatedHttpClientHandler"/> class
+	/// Initializes a new instance of the <see cref="AuthenticatedBackingOffHttpClientHandler"/> class
 	/// </summary>
 	/// <param name="options">The client options containing the API token</param>
-	public AuthenticatedHttpClientHandler(SolidtimeClientOptions options)
+	public AuthenticatedBackingOffHttpClientHandler(SolidtimeClientOptions options)
 		: base(new HttpClientHandler())
 	{
 		ArgumentNullException.ThrowIfNull(options);
@@ -28,7 +31,7 @@ public partial class AuthenticatedHttpClientHandler : DelegatingHandler
 	}
 
 	/// <summary>
-	/// Sends an HTTP request with Bearer token authentication
+	/// Sends an HTTP request with Bearer token authentication and handles rate limiting with backoff
 	/// </summary>
 	/// <param name="request">The HTTP request message</param>
 	/// <param name="cancellationToken">A cancellation token</param>
@@ -42,102 +45,220 @@ public partial class AuthenticatedHttpClientHandler : DelegatingHandler
 		// Add Bearer token authentication
 		request.Headers.Authorization = new AuthenticationHeaderValue("Bearer", _options.ApiToken);
 
-		// Log the request
-		if (_logger.IsEnabled(LogLevel.Debug))
+		// Retry loop for rate limiting
+		for (var attempt = 0; attempt <= MaxRetries; attempt++)
 		{
-			LogRequestStart();
-			LogRequestMethod(request.Method.ToString());
-			LogRequestUri(request.RequestUri?.ToString() ?? string.Empty);
+			// Clone the request for potential retries (except on first attempt)
+			var requestToSend = attempt == 0 ? request : await CloneHttpRequestMessageAsync(request);
 
-			if (request.Headers.Any())
+			// Log the request
+			if (_logger.IsEnabled(LogLevel.Debug))
 			{
-				LogRequestHeadersStart();
-				foreach (var header in request.Headers)
+				LogRequestStart();
+				if (attempt > 0)
 				{
-					// Mask the authorization token for security
-					if (header.Key.Equals("Authorization", StringComparison.OrdinalIgnoreCase))
-					{
-						LogRequestHeaderRedacted(header.Key);
-					}
-					else
-					{
-						LogRequestHeader(header.Key, string.Join(", ", header.Value));
-					}
-				}
-			}
-
-			if (request.Content != null)
-			{
-				// Read content for logging but preserve it for sending
-				var requestBody = await request.Content.ReadAsStringAsync(cancellationToken).ConfigureAwait(false);
-				LogRequestBody(requestBody);
-
-				// Re-create the content so it can be sent
-				request.Content = new StringContent(
-					requestBody,
-					request.Content.Headers.ContentType?.CharSet != null
-						? System.Text.Encoding.GetEncoding(request.Content.Headers.ContentType.CharSet)
-						: System.Text.Encoding.UTF8,
-					request.Content.Headers.ContentType?.MediaType ?? "application/json");
-			}
-
-			LogRequestEnd();
-		}
-
-		var response = await base.SendAsync(request, cancellationToken).ConfigureAwait(false);
-
-		// Log the response
-		if (_logger.IsEnabled(LogLevel.Debug))
-		{
-			LogResponseStart();
-			LogResponseStatus((int)response.StatusCode, response.ReasonPhrase ?? string.Empty);
-
-			if (response.Headers.Any() || response.Content?.Headers.Count() > 0)
-			{
-				LogResponseHeadersStart();
-				foreach (var header in response.Headers)
-				{
-					LogResponseHeader(header.Key, string.Join(", ", header.Value));
+					LogRetryAttempt(attempt, MaxRetries);
 				}
 
-				if (response.Content?.Headers != null)
+				LogRequestMethod(requestToSend.Method.ToString());
+				LogRequestUri(requestToSend.RequestUri?.ToString() ?? string.Empty);
+
+				if (requestToSend.Headers.Any())
 				{
-					foreach (var header in response.Content.Headers)
+					LogRequestHeadersStart();
+					foreach (var header in requestToSend.Headers)
+					{
+						// Mask the authorization token for security
+						if (header.Key.Equals("Authorization", StringComparison.OrdinalIgnoreCase))
+						{
+							LogRequestHeaderRedacted(header.Key);
+						}
+						else
+						{
+							LogRequestHeader(header.Key, string.Join(", ", header.Value));
+						}
+					}
+				}
+
+				if (requestToSend.Content != null)
+				{
+					// Read content for logging but preserve it for sending
+					var requestBody = await requestToSend.Content.ReadAsStringAsync(cancellationToken).ConfigureAwait(false);
+					LogRequestBody(requestBody);
+
+					// Re-create the content so it can be sent
+					requestToSend.Content = new StringContent(
+						requestBody,
+						requestToSend.Content.Headers.ContentType?.CharSet != null
+							? System.Text.Encoding.GetEncoding(requestToSend.Content.Headers.ContentType.CharSet)
+							: System.Text.Encoding.UTF8,
+						requestToSend.Content.Headers.ContentType?.MediaType ?? "application/json");
+				}
+
+				LogRequestEnd();
+			}
+
+			var response = await base.SendAsync(requestToSend, cancellationToken).ConfigureAwait(false);
+
+			// Log the response
+			if (_logger.IsEnabled(LogLevel.Debug))
+			{
+				LogResponseStart();
+				LogResponseStatus((int)response.StatusCode, response.ReasonPhrase ?? string.Empty);
+
+				if (response.Headers.Any() || response.Content?.Headers.Count() > 0)
+				{
+					LogResponseHeadersStart();
+					foreach (var header in response.Headers)
 					{
 						LogResponseHeader(header.Key, string.Join(", ", header.Value));
 					}
+
+					if (response.Content?.Headers != null)
+					{
+						foreach (var header in response.Content.Headers)
+						{
+							LogResponseHeader(header.Key, string.Join(", ", header.Value));
+						}
+					}
 				}
-			}
 
-			if (response.Content != null)
-			{
-				// Read the response content for logging
-				var responseBody = await response.Content.ReadAsStringAsync(cancellationToken).ConfigureAwait(false);
-
-				// Log non-empty bodies
-				if (!string.IsNullOrWhiteSpace(responseBody))
+				if (response.Content != null)
 				{
-					LogResponseBody(responseBody);
+					// Read the response content for logging
+					var responseBody = await response.Content.ReadAsStringAsync(cancellationToken).ConfigureAwait(false);
+
+					// Log non-empty bodies
+					if (!string.IsNullOrWhiteSpace(responseBody))
+					{
+						LogResponseBody(responseBody);
+					}
+
+					// Re-wrap the content so it can be read again by Refit
+					response.Content = new StringContent(
+						responseBody,
+						response.Content.Headers.ContentType?.CharSet != null
+							? System.Text.Encoding.GetEncoding(response.Content.Headers.ContentType.CharSet)
+							: System.Text.Encoding.UTF8,
+						response.Content.Headers.ContentType?.MediaType ?? "application/json");
 				}
 
-				// Re-wrap the content so it can be read again by Refit
-				response.Content = new StringContent(
-					responseBody,
-					response.Content.Headers.ContentType?.CharSet != null
-						? System.Text.Encoding.GetEncoding(response.Content.Headers.ContentType.CharSet)
-						: System.Text.Encoding.UTF8,
-					response.Content.Headers.ContentType?.MediaType ?? "application/json");
+				LogResponseEnd();
 			}
 
-			LogResponseEnd();
+			// Check if we got rate limited (429 Too Many Requests)
+			if (response.StatusCode == HttpStatusCode.TooManyRequests)
+			{
+				// Don't retry if we've exhausted attempts
+				if (attempt >= MaxRetries)
+				{
+					LogMaxRetriesExceeded();
+					return response;
+				}
+
+				// Calculate backoff delay
+				var backoffDelay = GetBackoffDelay(response, attempt);
+
+				LogRateLimitBackoff(backoffDelay.TotalSeconds);
+
+				// Wait before retrying
+				await Task.Delay(backoffDelay, cancellationToken).ConfigureAwait(false);
+
+				// Dispose the failed response before retrying
+				response.Dispose();
+				continue;
+			}
+
+			// Success or non-retryable error - return the response
+			return response;
 		}
 
-		return response;
+		// Should never reach here, but return a failure response just in case
+		throw new InvalidOperationException("Retry loop completed without returning a response");
+	}
+
+	/// <summary>
+	/// Calculates the backoff delay based on response headers and attempt number
+	/// </summary>
+	private static TimeSpan GetBackoffDelay(HttpResponseMessage response, int attempt)
+	{
+		// Try to get Retry-After header (can be in seconds or HTTP date)
+		if (response.Headers.RetryAfter != null)
+		{
+			if (response.Headers.RetryAfter.Delta.HasValue)
+			{
+				// Retry-After specified as seconds
+				return response.Headers.RetryAfter.Delta.Value;
+			}
+			else if (response.Headers.RetryAfter.Date.HasValue)
+			{
+				// Retry-After specified as HTTP date
+				var delay = response.Headers.RetryAfter.Date.Value - DateTimeOffset.UtcNow;
+				if (delay.TotalSeconds > 0)
+				{
+					return delay;
+				}
+			}
+		}
+
+		// Check for X-RateLimit-Reset header (Unix timestamp)
+		if (response.Headers.TryGetValues("X-RateLimit-Reset", out var resetValues))
+		{
+			var resetValue = resetValues.FirstOrDefault();
+			if (!string.IsNullOrEmpty(resetValue) && long.TryParse(resetValue, out var resetTimestamp))
+			{
+				var resetTime = DateTimeOffset.FromUnixTimeSeconds(resetTimestamp);
+				var delay = resetTime - DateTimeOffset.UtcNow;
+				if (delay.TotalSeconds > 0)
+				{
+					return delay;
+				}
+			}
+		}
+
+		// Fallback to exponential backoff: 1s, 2s, 4s
+		var exponentialDelay = InitialBackoffMs * Math.Pow(2, attempt);
+		return TimeSpan.FromMilliseconds(exponentialDelay);
+	}
+
+	/// <summary>
+	/// Clones an HTTP request message for retry attempts
+	/// </summary>
+	private static async Task<HttpRequestMessage> CloneHttpRequestMessageAsync(HttpRequestMessage request)
+	{
+		var clone = new HttpRequestMessage(request.Method, request.RequestUri)
+		{
+			Version = request.Version
+		};
+
+		// Copy headers
+		foreach (var header in request.Headers)
+		{
+			clone.Headers.TryAddWithoutValidation(header.Key, header.Value);
+		}
+
+		// Copy content if present
+		if (request.Content != null)
+		{
+			var contentBytes = await request.Content.ReadAsByteArrayAsync().ConfigureAwait(false);
+			clone.Content = new ByteArrayContent(contentBytes);
+
+			// Copy content headers
+			foreach (var header in request.Content.Headers)
+			{
+				clone.Content.Headers.TryAddWithoutValidation(header.Key, header.Value);
+			}
+		}
+
+		return clone;
 	}
 
 	// LoggerMessage delegates for high-performance logging
 	[LoggerMessage(Level = LogLevel.Debug, Message = "┌─ HTTP Request ─────────────────────────────────")]
 	private partial void LogRequestStart();
+
+	[LoggerMessage(Level = LogLevel.Debug, Message = "│ Retry attempt {attempt} of {maxRetries}")]
+	private partial void LogRetryAttempt(int attempt, int maxRetries);
 
 	[LoggerMessage(Level = LogLevel.Debug, Message = "│ Method: {method}")]
 	private partial void LogRequestMethod(string method);
@@ -177,4 +298,10 @@ public partial class AuthenticatedHttpClientHandler : DelegatingHandler
 
 	[LoggerMessage(Level = LogLevel.Debug, Message = "└────────────────────────────────────────────────")]
 	private partial void LogResponseEnd();
+
+	[LoggerMessage(Level = LogLevel.Warning, Message = "Rate limit exceeded (429), backing off for {seconds} seconds")]
+	private partial void LogRateLimitBackoff(double seconds);
+
+	[LoggerMessage(Level = LogLevel.Warning, Message = "Maximum retry attempts exceeded for rate limiting")]
+	private partial void LogMaxRetriesExceeded();
 }

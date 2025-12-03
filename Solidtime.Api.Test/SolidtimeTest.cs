@@ -17,6 +17,7 @@ public class SolidtimeTest : TestBed<Fixture>
 	protected static CancellationToken CancellationToken => TestContext.Current.CancellationToken;
 
 	private string? _organizationId;
+	private new readonly Fixture _fixture;
 
 	/// <summary>
 	/// Gets the logger
@@ -42,6 +43,11 @@ public class SolidtimeTest : TestBed<Fixture>
 	{
 		ArgumentNullException.ThrowIfNull(testOutputHelper);
 		ArgumentNullException.ThrowIfNull(fixture);
+
+		_fixture = fixture;
+
+		// Ensure test data is set up
+		_fixture.EnsureTestDataSetupAsync(testOutputHelper).Wait();
 
 		// Logger - create a logger factory with XUnit output
 		var loggerFactory = LoggerFactory.Create(builder =>
@@ -119,6 +125,12 @@ public class SolidtimeTest : TestBed<Fixture>
 			return Configuration.SampleProjectId;
 		}
 
+		// Otherwise, use the project created during test setup
+		if (_fixture.TestDataManager?.SampleProjectId != null)
+		{
+			return _fixture.TestDataManager.SampleProjectId;
+		}
+
 		// Otherwise, fetch from API
 		var organizationId = await GetOrganizationIdAsync();
 		var projects = await SolidtimeClient.Projects.GetAsync(organizationId, null, null, CancellationToken);
@@ -144,6 +156,12 @@ public class SolidtimeTest : TestBed<Fixture>
 			return Configuration.SampleClientId;
 		}
 
+		// Otherwise, use the client created during test setup
+		if (_fixture.TestDataManager?.SampleClientId != null)
+		{
+			return _fixture.TestDataManager.SampleClientId;
+		}
+
 		// Otherwise, fetch from API
 		var organizationId = await GetOrganizationIdAsync();
 		var clients = await SolidtimeClient.Clients.GetAsync(organizationId, null, null, CancellationToken);
@@ -155,5 +173,30 @@ public class SolidtimeTest : TestBed<Fixture>
 		}
 		
 		return clients.Data.First().Id;
+	}
+
+	/// <summary>
+	/// Gets a sample tag ID for testing
+	/// </summary>
+	/// <returns>The tag ID</returns>
+	protected async Task<string> GetTagIdAsync()
+	{
+		// Use the tag created during test setup
+		if (_fixture.TestDataManager?.SampleTagId != null)
+		{
+			return _fixture.TestDataManager.SampleTagId;
+		}
+
+		// Otherwise, fetch from API
+		var organizationId = await GetOrganizationIdAsync();
+		var tags = await SolidtimeClient.Tags.GetAsync(organizationId, null, null, CancellationToken);
+		
+		if (tags.Data.Count == 0)
+		{
+			throw new InvalidOperationException(
+				"No tags found in the organization. Please create a tag first.");
+		}
+		
+		return tags.Data.First().Id;
 	}
 }

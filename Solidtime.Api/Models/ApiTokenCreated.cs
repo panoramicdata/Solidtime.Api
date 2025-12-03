@@ -47,4 +47,22 @@ public class ApiTokenCreated : SolidtimeEntityBase
 	/// </summary>
 	[JsonPropertyName("plain_text_token")]
 	public string? PlainTextToken { get; set; }
+
+	/// <summary>
+	/// The access token value (JWT format, only available immediately after creation)
+	/// </summary>
+	[JsonPropertyName("access_token")]
+	public string? AccessToken { get; set; }
+
+	/// <summary>
+	/// Whether the token has been revoked
+	/// </summary>
+	[JsonPropertyName("revoked")]
+	public bool? Revoked { get; set; }
+
+	/// <summary>
+	/// The scopes/permissions granted to this token
+	/// </summary>
+	[JsonPropertyName("scopes")]
+	public List<string>? Scopes { get; set; }
 }

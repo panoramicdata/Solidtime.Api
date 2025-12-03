@@ -24,7 +24,7 @@ public class SolidtimeClient : IDisposable
 		// Validate that all of the necessary configuration has been provided
 		options.Validate();
 
-		_httpClient = new HttpClient(new AuthenticatedHttpClientHandler(options))
+		_httpClient = new HttpClient(new AuthenticatedBackingOffHttpClientHandler(options))
 		{
 			BaseAddress = new Uri(options.BaseUrl),
 			Timeout = TimeSpan.FromSeconds(options.TimeoutSeconds)
@@ -36,6 +36,7 @@ public class SolidtimeClient : IDisposable
 			{
 				PropertyNamingPolicy = JsonNamingPolicy.SnakeCaseLower,
 				WriteIndented = true,
+				DefaultIgnoreCondition = JsonIgnoreCondition.WhenWritingNull,
 				UnmappedMemberHandling = options.JsonUnmappedMemberHandling,
 				Converters =
 				{

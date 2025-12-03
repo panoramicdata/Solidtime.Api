@@ -33,69 +33,90 @@ public class TimeEntryTests(ITestOutputHelper testOutputHelper, Fixture fixture)
 	public async Task TimeEntries_CreateUpdateDelete_Succeeds()
 	{
 		var organizationId = await GetOrganizationIdAsync();
+		string? timeEntryId = null;
 
-		var now = DateTimeOffset.UtcNow;
-
-		// Create
-		var createRequest = new TimeEntryStoreRequest
+		try
 		{
-			Description = $"Test Time Entry {Guid.NewGuid()}",
-			Start = now.AddHours(-2),
-			End = now.AddHours(-1),
-			Billable = true
-		};
+			var now = DateTimeOffset.UtcNow;
 
-		var createResult = await SolidtimeClient
-			.TimeEntries
-			.CreateAsync(organizationId, createRequest, CancellationToken);
+			// Create
+			var createRequest = new TimeEntryStoreRequest
+			{
+				Description = $"Test Time Entry {Guid.NewGuid()}",
+				Start = now.AddHours(-2),
+				End = now.AddHours(-1),
+				Billable = true
+			};
 
-		createResult.Should().NotBeNull();
-		createResult.Data.Should().NotBeNull();
-		createResult.Data.Description.Should().Be(createRequest.Description);
-		createResult.Data.Id.Should().NotBeNullOrWhiteSpace();
-		createResult.Data.OrganizationId.Should().Be(organizationId);
-		createResult.Data.Billable.Should().BeTrue();
-		createResult.Data.End.Should().NotBeNull();
-		createResult.Data.Duration.Should().BePositive();
+			var createResult = await SolidtimeClient
+				.TimeEntries
+				.CreateAsync(organizationId, createRequest, CancellationToken);
 
-		var timeEntryId = createResult.Data.Id;
+			createResult.Should().NotBeNull();
+			createResult.Data.Should().NotBeNull();
+			createResult.Data.Description.Should().Be(createRequest.Description);
+			createResult.Data.Id.Should().NotBeNullOrWhiteSpace();
+			createResult.Data.OrganizationId.Should().Be(organizationId);
+			createResult.Data.Billable.Should().BeTrue();
+			createResult.Data.End.Should().NotBeNull();
+			createResult.Data.Duration.Should().BePositive();
 
-		// Get by ID
-		var getResult = await SolidtimeClient
-			.TimeEntries
-			.GetByIdAsync(organizationId, timeEntryId, CancellationToken);
+			timeEntryId = createResult.Data.Id;
 
-		getResult.Should().NotBeNull();
-		getResult.Data.Id.Should().Be(timeEntryId);
-		getResult.Data.Description.Should().Be(createRequest.Description);
+			// Get by ID
+			var getResult = await SolidtimeClient
+				.TimeEntries
+				.GetByIdAsync(organizationId, timeEntryId, CancellationToken);
 
-		// Update
-		var updateRequest = new TimeEntryUpdateRequest
+			getResult.Should().NotBeNull();
+			getResult.Data.Id.Should().Be(timeEntryId);
+			getResult.Data.Description.Should().Be(createRequest.Description);
+
+			// Update
+			var updateRequest = new TimeEntryUpdateRequest
+			{
+				Description = $"Updated Time Entry {Guid.NewGuid()}",
+				Billable = false
+			};
+
+			var updateResult = await SolidtimeClient
+				.TimeEntries
+				.UpdateAsync(organizationId, timeEntryId, updateRequest, CancellationToken);
+
+			updateResult.Should().NotBeNull();
+			updateResult.Data.Id.Should().Be(timeEntryId);
+			updateResult.Data.Description.Should().Be(updateRequest.Description);
+			updateResult.Data.Billable.Should().BeFalse();
+
+			// Delete
+			await SolidtimeClient
+				.TimeEntries
+				.DeleteAsync(organizationId, timeEntryId, CancellationToken);
+
+			// Verify deletion by checking it doesn't appear in the list
+			var allTimeEntries = await SolidtimeClient
+				.TimeEntries
+				.GetAsync(organizationId, null, null, CancellationToken);
+
+			allTimeEntries.Data.Should().NotContain(t => t.Id == timeEntryId);
+		}
+		finally
 		{
-			Description = $"Updated Time Entry {Guid.NewGuid()}",
-			Billable = false
-		};
-
-		var updateResult = await SolidtimeClient
-			.TimeEntries
-			.UpdateAsync(organizationId, timeEntryId, updateRequest, CancellationToken);
-
-		updateResult.Should().NotBeNull();
-		updateResult.Data.Id.Should().Be(timeEntryId);
-		updateResult.Data.Description.Should().Be(updateRequest.Description);
-		updateResult.Data.Billable.Should().BeFalse();
-
-		// Delete
-		await SolidtimeClient
-			.TimeEntries
-			.DeleteAsync(organizationId, timeEntryId, CancellationToken);
-
-		// Verify deletion by checking it doesn't appear in the list
-		var allTimeEntries = await SolidtimeClient
-			.TimeEntries
-			.GetAsync(organizationId, null, null, CancellationToken);
-
-		allTimeEntries.Data.Should().NotContain(t => t.Id == timeEntryId);
+			// Ensure cleanup even if test fails
+			if (timeEntryId != null)
+			{
+				try
+				{
+					await SolidtimeClient
+						.TimeEntries
+						.DeleteAsync(organizationId, timeEntryId, CancellationToken);
+				}
+				catch
+				{
+					// Time entry may already be deleted, ignore errors
+				}
+			}
+		}
 	}
 
 	/// <summary>
@@ -105,39 +126,62 @@ public class TimeEntryTests(ITestOutputHelper testOutputHelper, Fixture fixture)
 	public async Task TimeEntries_CreateRunning_Succeeds()
 	{
 		var organizationId = await GetOrganizationIdAsync();
+		string? timeEntryId = null;
 
-		// Create a running time entry (no end time)
-		var createRequest = new TimeEntryStoreRequest
+		try
 		{
-			Description = $"Running Timer {Guid.NewGuid()}",
-			Start = DateTimeOffset.UtcNow.AddMinutes(-5)
-		};
+			// Create a running time entry (no end time)
+			var createRequest = new TimeEntryStoreRequest
+			{
+				Description = $"Running Timer {Guid.NewGuid()}",
+				Start = DateTimeOffset.UtcNow.AddMinutes(-5)
+			};
 
-		var createResult = await SolidtimeClient
-			.TimeEntries
-			.CreateAsync(organizationId, createRequest, CancellationToken);
+			var createResult = await SolidtimeClient
+				.TimeEntries
+				.CreateAsync(organizationId, createRequest, CancellationToken);
 
-		createResult.Should().NotBeNull();
-		createResult.Data.End.Should().BeNull();
-		createResult.Data.Duration.Should().BeNull();
+			createResult.Should().NotBeNull();
+			createResult.Data.End.Should().BeNull();
+			createResult.Data.Duration.Should().BeNull();
 
-		// Stop the timer
-		var stopRequest = new TimeEntryUpdateRequest
+			timeEntryId = createResult.Data.Id;
+
+			// Stop the timer
+			var stopRequest = new TimeEntryUpdateRequest
+			{
+				End = DateTimeOffset.UtcNow
+			};
+
+			var stopResult = await SolidtimeClient
+				.TimeEntries
+				.UpdateAsync(organizationId, timeEntryId, stopRequest, CancellationToken);
+
+			stopResult.Data.End.Should().NotBeNull();
+			stopResult.Data.Duration.Should().BePositive();
+
+			// Clean up
+			await SolidtimeClient
+				.TimeEntries
+				.DeleteAsync(organizationId, timeEntryId, CancellationToken);
+		}
+		finally
 		{
-			End = DateTimeOffset.UtcNow
-		};
-
-		var stopResult = await SolidtimeClient
-			.TimeEntries
-			.UpdateAsync(organizationId, createResult.Data.Id, stopRequest, CancellationToken);
-
-		stopResult.Data.End.Should().NotBeNull();
-		stopResult.Data.Duration.Should().BePositive();
-
-		// Clean up
-		await SolidtimeClient
-			.TimeEntries
-			.DeleteAsync(organizationId, createResult.Data.Id, CancellationToken);
+			// Ensure cleanup even if test fails
+			if (timeEntryId != null)
+			{
+				try
+				{
+					await SolidtimeClient
+						.TimeEntries
+						.DeleteAsync(organizationId, timeEntryId, CancellationToken);
+				}
+				catch
+				{
+					// Time entry may already be deleted, ignore errors
+				}
+			}
+		}
 	}
 
 	/// <summary>

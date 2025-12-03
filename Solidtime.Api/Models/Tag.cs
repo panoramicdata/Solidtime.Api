@@ -12,8 +12,8 @@ public class Tag : SolidtimeEntityBase
 	public required string Name { get; set; }
 
 	/// <summary>
-	/// The organization ID this tag belongs to
+	/// The organization ID this tag belongs to (not always returned by the API)
 	/// </summary>
 	[JsonPropertyName("organization_id")]
-	public required string OrganizationId { get; set; }
+	public string? OrganizationId { get; set; }
 }

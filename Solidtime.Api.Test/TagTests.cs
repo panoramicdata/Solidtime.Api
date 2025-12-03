@@ -33,59 +33,79 @@ public class TagTests(ITestOutputHelper testOutputHelper, Fixture fixture)
 	public async Task Tags_CreateUpdateDelete_Succeeds()
 	{
 		var organizationId = await GetOrganizationIdAsync();
+		string? tagId = null;
 
-		// Create
-		var createRequest = new TagStoreRequest
+		try
 		{
-			Name = $"Test Tag {Guid.NewGuid()}"
-		};
+			// Create
+			var createRequest = new TagStoreRequest
+			{
+				Name = $"Test Tag {Guid.NewGuid()}"
+			};
 
-		var createResult = await SolidtimeClient
-			.Tags
-			.CreateAsync(organizationId, createRequest, CancellationToken);
+			var createResult = await SolidtimeClient
+				.Tags
+				.CreateAsync(organizationId, createRequest, CancellationToken);
 
-		createResult.Should().NotBeNull();
-		createResult.Data.Should().NotBeNull();
-		createResult.Data.Name.Should().Be(createRequest.Name);
-		createResult.Data.Id.Should().NotBeNullOrWhiteSpace();
-		createResult.Data.OrganizationId.Should().Be(organizationId);
+			createResult.Should().NotBeNull();
+			createResult.Data.Should().NotBeNull();
+			createResult.Data.Name.Should().Be(createRequest.Name);
+			createResult.Data.Id.Should().NotBeNullOrWhiteSpace();
 
-		var tagId = createResult.Data.Id;
+			tagId = createResult.Data.Id;
 
-		// Get by ID
-		var getResult = await SolidtimeClient
-			.Tags
-			.GetByIdAsync(organizationId, tagId, CancellationToken);
+			// Get by ID
+			var getResult = await SolidtimeClient
+				.Tags
+				.GetByIdAsync(organizationId, tagId, CancellationToken);
 
-		getResult.Should().NotBeNull();
-		getResult.Data.Id.Should().Be(tagId);
-		getResult.Data.Name.Should().Be(createRequest.Name);
+			getResult.Should().NotBeNull();
+			getResult.Data.Id.Should().Be(tagId);
+			getResult.Data.Name.Should().Be(createRequest.Name);
 
-		// Update
-		var updateRequest = new TagUpdateRequest
+			// Update
+			var updateRequest = new TagUpdateRequest
+			{
+				Name = $"Updated Tag {Guid.NewGuid()}"
+			};
+
+			var updateResult = await SolidtimeClient
+				.Tags
+				.UpdateAsync(organizationId, tagId, updateRequest, CancellationToken);
+
+			updateResult.Should().NotBeNull();
+			updateResult.Data.Id.Should().Be(tagId);
+			updateResult.Data.Name.Should().Be(updateRequest.Name);
+
+			// Delete
+			await SolidtimeClient
+				.Tags
+				.DeleteAsync(organizationId, tagId, CancellationToken);
+
+			// Verify deletion by checking it doesn't appear in the list
+			var allTags = await SolidtimeClient
+				.Tags
+				.GetAsync(organizationId, null, null, CancellationToken);
+
+			allTags.Data.Should().NotContain(t => t.Id == tagId);
+		}
+		finally
 		{
-			Name = $"Updated Tag {Guid.NewGuid()}"
-		};
-
-		var updateResult = await SolidtimeClient
-			.Tags
-			.UpdateAsync(organizationId, tagId, updateRequest, CancellationToken);
-
-		updateResult.Should().NotBeNull();
-		updateResult.Data.Id.Should().Be(tagId);
-		updateResult.Data.Name.Should().Be(updateRequest.Name);
-
-		// Delete
-		await SolidtimeClient
-			.Tags
-			.DeleteAsync(organizationId, tagId, CancellationToken);
-
-		// Verify deletion by checking it doesn't appear in the list
-		var allTags = await SolidtimeClient
-			.Tags
-			.GetAsync(organizationId, null, null, CancellationToken);
-
-		allTags.Data.Should().NotContain(t => t.Id == tagId);
+			// Ensure cleanup even if test fails
+			if (tagId != null)
+			{
+				try
+				{
+					await SolidtimeClient
+						.Tags
+						.DeleteAsync(organizationId, tagId, CancellationToken);
+				}
+				catch
+				{
+					// Tag may already be deleted, ignore errors
+				}
+			}
+		}
 	}
 
 	/// <summary>
