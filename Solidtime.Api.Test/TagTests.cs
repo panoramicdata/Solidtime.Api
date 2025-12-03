@@ -27,10 +27,11 @@ public class TagTests(ITestOutputHelper testOutputHelper, Fixture fixture)
 	}
 
 	/// <summary>
-	/// Tests that creating, updating, and deleting a tag succeeds
+	/// Tests that creating and deleting a tag succeeds
+	/// NOTE: Solidtime API does not support GET by ID or UPDATE operations for tags
 	/// </summary>
 	[Fact]
-	public async Task Tags_CreateUpdateDelete_Succeeds()
+	public async Task Tags_CreateDelete_Succeeds()
 	{
 		var organizationId = await GetOrganizationIdAsync();
 		string? tagId = null;
@@ -54,28 +55,14 @@ public class TagTests(ITestOutputHelper testOutputHelper, Fixture fixture)
 
 			tagId = createResult.Data.Id;
 
-			// Get by ID
-			var getResult = await SolidtimeClient
+			// Verify creation by getting all tags and checking the new one is present
+			var allTagsAfterCreate = await SolidtimeClient
 				.Tags
-				.GetByIdAsync(organizationId, tagId, CancellationToken);
+				.GetAsync(organizationId, null, null, CancellationToken);
 
-			getResult.Should().NotBeNull();
-			getResult.Data.Id.Should().Be(tagId);
-			getResult.Data.Name.Should().Be(createRequest.Name);
-
-			// Update
-			var updateRequest = new TagUpdateRequest
-			{
-				Name = $"Updated Tag {Guid.NewGuid()}"
-			};
-
-			var updateResult = await SolidtimeClient
-				.Tags
-				.UpdateAsync(organizationId, tagId, updateRequest, CancellationToken);
-
-			updateResult.Should().NotBeNull();
-			updateResult.Data.Id.Should().Be(tagId);
-			updateResult.Data.Name.Should().Be(updateRequest.Name);
+			allTagsAfterCreate.Data.Should().Contain(t => t.Id == tagId);
+			var createdTag = allTagsAfterCreate.Data.First(t => t.Id == tagId);
+			createdTag.Name.Should().Be(createRequest.Name);
 
 			// Delete
 			await SolidtimeClient
@@ -83,11 +70,11 @@ public class TagTests(ITestOutputHelper testOutputHelper, Fixture fixture)
 				.DeleteAsync(organizationId, tagId, CancellationToken);
 
 			// Verify deletion by checking it doesn't appear in the list
-			var allTags = await SolidtimeClient
+			var allTagsAfterDelete = await SolidtimeClient
 				.Tags
 				.GetAsync(organizationId, null, null, CancellationToken);
 
-			allTags.Data.Should().NotContain(t => t.Id == tagId);
+			allTagsAfterDelete.Data.Should().NotContain(t => t.Id == tagId);
 		}
 		finally
 		{

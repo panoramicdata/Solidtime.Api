@@ -26,19 +26,6 @@ public interface ITasks
 		CancellationToken cancellationToken);
 
 	/// <summary>
-	/// Gets a specific task by ID
-	/// </summary>
-	/// <param name="organizationId">The organization ID</param>
-	/// <param name="taskId">The task ID</param>
-	/// <param name="cancellationToken">Cancellation token</param>
-	/// <returns>The task</returns>
-	[Get("/v1/organizations/{organization}/tasks/{task}")]
-	Task<DataWrapper<TaskModel>> GetByIdAsync(
-		[AliasAs("organization")] string organizationId,
-		[AliasAs("task")] string taskId,
-		CancellationToken cancellationToken);
-
-	/// <summary>
 	/// Creates a new task
 	/// </summary>
 	/// <param name="organizationId">The organization ID</param>
@@ -59,7 +46,7 @@ public interface ITasks
 	/// <param name="request">The task update request</param>
 	/// <param name="cancellationToken">Cancellation token</param>
 	/// <returns>The updated task</returns>
-	[Patch("/v1/organizations/{organization}/tasks/{task}")]
+	[Put("/v1/organizations/{organization}/tasks/{task}")]
 	Task<DataWrapper<TaskModel>> UpdateAsync(
 		[AliasAs("organization")] string organizationId,
 		[AliasAs("task")] string taskId,

@@ -16,9 +16,9 @@ public interface IProjectMembers
 	/// <param name="organizationId">The organization ID</param>
 	/// <param name="projectId">The project ID</param>
 	/// <param name="cancellationToken">Cancellation token</param>
-	/// <returns>A list of project members</returns>
+	/// <returns>A paginated list of project members</returns>
 	[Get("/v1/organizations/{organization}/projects/{project}/project-members")]
-	Task<DataWrapper<List<ProjectMember>>> GetAsync(
+	Task<PaginatedResponse<ProjectMember>> GetAsync(
 		[AliasAs("organization")] string organizationId,
 		[AliasAs("project")] string projectId,
 		CancellationToken cancellationToken);

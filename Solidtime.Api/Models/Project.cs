@@ -37,7 +37,32 @@ public class Project : SolidtimeEntityBase
 
 	/// <summary>
 	/// The organization ID this project belongs to
+	/// Note: Not always returned by the API (e.g., during creation)
 	/// </summary>
 	[JsonPropertyName("organization_id")]
-	public required string OrganizationId { get; set; }
+	public string? OrganizationId { get; set; }
+
+	/// <summary>
+	/// The billable rate for the project (in cents per hour)
+	/// </summary>
+	[JsonPropertyName("billable_rate")]
+	public int? BillableRate { get; set; }
+
+	/// <summary>
+	/// The estimated time for the project (in seconds)
+	/// </summary>
+	[JsonPropertyName("estimated_time")]
+	public int? EstimatedTime { get; set; }
+
+	/// <summary>
+	/// The spent time on the project (in seconds)
+	/// </summary>
+	[JsonPropertyName("spent_time")]
+	public int? SpentTime { get; set; }
+
+	/// <summary>
+	/// Gets or sets whether the project is public
+	/// </summary>
+	[JsonPropertyName("is_public")]
+	public bool? IsPublic { get; set; }
 }

@@ -28,7 +28,7 @@ public interface IOrganizations
 	/// <param name="request">The update request</param>
 	/// <param name="cancellationToken">Cancellation token</param>
 	/// <returns>The updated organization</returns>
-	[Patch("/v1/organizations/{organization}")]
+	[Put("/v1/organizations/{organization}")]
 	Task<DataWrapper<Organization>> UpdateAsync(
 		[AliasAs("organization")] string organizationId,
 		[Body] OrganizationUpdateRequest request,

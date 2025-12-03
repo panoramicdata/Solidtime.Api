@@ -59,7 +59,7 @@ public interface ITimeEntries
 	/// <param name="request">The time entry update request</param>
 	/// <param name="cancellationToken">Cancellation token</param>
 	/// <returns>The updated time entry</returns>
-	[Patch("/v1/organizations/{organization}/time-entries/{timeEntry}")]
+	[Put("/v1/organizations/{organization}/time-entries/{timeEntry}")]
 	Task<DataWrapper<TimeEntry>> UpdateAsync(
 		[AliasAs("organization")] string organizationId,
 		[AliasAs("timeEntry")] string timeEntryId,

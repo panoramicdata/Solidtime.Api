@@ -26,7 +26,8 @@ public class TaskModel : SolidtimeEntityBase
 
 	/// <summary>
 	/// The organization ID this task belongs to
+	/// Note: Not always returned by the API (e.g., during creation)
 	/// </summary>
 	[JsonPropertyName("organization_id")]
-	public required string OrganizationId { get; set; }
+	public string? OrganizationId { get; set; }
 }

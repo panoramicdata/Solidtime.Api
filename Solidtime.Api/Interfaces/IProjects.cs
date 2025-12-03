@@ -59,7 +59,7 @@ public interface IProjects
 	/// <param name="request">The project update request</param>
 	/// <param name="cancellationToken">Cancellation token</param>
 	/// <returns>The updated project</returns>
-	[Patch("/v1/organizations/{organization}/projects/{project}")]
+	[Put("/v1/organizations/{organization}/projects/{project}")]
 	Task<DataWrapper<Project>> UpdateAsync(
 		[AliasAs("organization")] string organizationId,
 		[AliasAs("project")] string projectId,

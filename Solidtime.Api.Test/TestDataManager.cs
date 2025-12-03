@@ -16,8 +16,7 @@ public class TestDataManager(SolidtimeClient client, string organizationId, ILog
 
 	/// <summary>
 	/// Sets up test data before test run
-	/// Creates a sample client for tests to use
-	/// Note: Project creation is skipped as it has complex validation requirements
+	/// Creates a sample client, tag, and project for tests to use
 	/// </summary>
 	public async Task SetupTestDataAsync(CancellationToken cancellationToken)
 	{
@@ -37,6 +36,20 @@ public class TestDataManager(SolidtimeClient client, string organizationId, ILog
 			var clientResult = await _client.Clients.CreateAsync(organizationId, clientRequest, cancellationToken);
 			SampleClientId = clientResult.Data.Id;
 			logger.LogInformation("Created sample client: {ClientId}", SampleClientId);
+
+			// Create a sample project for tests
+			// Note: Using lowercase Material Design color (from user's color palette)
+			var projectRequest = new ProjectStoreRequest
+			{
+				Name = $"TestProject-{timestamp}",
+				Color = "#ef5350",  // Material Red 400 - confirmed working by user
+				ClientId = SampleClientId,
+				IsBillable = false
+			};
+
+			var projectResult = await _client.Projects.CreateAsync(organizationId, projectRequest, cancellationToken);
+			SampleProjectId = projectResult.Data.Id;
+			logger.LogInformation("Created sample project: {ProjectId}", SampleProjectId);
 
 			// Create a sample tag for tests
 			var tagRequest = new TagStoreRequest

@@ -1,7 +1,7 @@
 namespace Solidtime.Api.Models;
 
 /// <summary>
-/// Request object for updating a project
+/// Request object for updating a project (PUT - full replacement)
 /// </summary>
 public class ProjectUpdateRequest
 {
@@ -9,13 +9,13 @@ public class ProjectUpdateRequest
 	/// The project's name
 	/// </summary>
 	[JsonPropertyName("name")]
-	public string? Name { get; set; }
+	public required string Name { get; set; }
 
 	/// <summary>
 	/// The project's color (hex color code)
 	/// </summary>
 	[JsonPropertyName("color")]
-	public string? Color { get; set; }
+	public required string Color { get; set; }
 
 	/// <summary>
 	/// The client ID this project belongs to

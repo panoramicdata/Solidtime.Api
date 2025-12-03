@@ -8,6 +8,11 @@ namespace Solidtime.Api.Interfaces;
 /// <summary>
 /// Interface for managing tags
 /// </summary>
+/// <remarks>
+/// NOTE: The Solidtime API has limited support for tag operations.
+/// Only List, Create, and Delete operations are currently supported.
+/// Get by ID and Update operations return 404/405 errors.
+/// </remarks>
 public interface ITags
 {
 	/// <summary>
@@ -26,19 +31,6 @@ public interface ITags
 		CancellationToken cancellationToken);
 
 	/// <summary>
-	/// Gets a specific tag by ID
-	/// </summary>
-	/// <param name="organizationId">The organization ID</param>
-	/// <param name="tagId">The tag ID</param>
-	/// <param name="cancellationToken">Cancellation token</param>
-	/// <returns>The tag</returns>
-	[Get("/v1/organizations/{organization}/tags/{tag}")]
-	Task<DataWrapper<Tag>> GetByIdAsync(
-		[AliasAs("organization")] string organizationId,
-		[AliasAs("tag")] string tagId,
-		CancellationToken cancellationToken);
-
-	/// <summary>
 	/// Creates a new tag
 	/// </summary>
 	/// <param name="organizationId">The organization ID</param>
@@ -49,21 +41,6 @@ public interface ITags
 	Task<DataWrapper<Tag>> CreateAsync(
 		[AliasAs("organization")] string organizationId,
 		[Body] TagStoreRequest request,
-		CancellationToken cancellationToken);
-
-	/// <summary>
-	/// Updates a tag
-	/// </summary>
-	/// <param name="organizationId">The organization ID</param>
-	/// <param name="tagId">The tag ID</param>
-	/// <param name="request">The tag update request</param>
-	/// <param name="cancellationToken">Cancellation token</param>
-	/// <returns>The updated tag</returns>
-	[Patch("/v1/organizations/{organization}/tags/{tag}")]
-	Task<DataWrapper<Tag>> UpdateAsync(
-		[AliasAs("organization")] string organizationId,
-		[AliasAs("tag")] string tagId,
-		[Body] TagUpdateRequest request,
 		CancellationToken cancellationToken);
 
 	/// <summary>
