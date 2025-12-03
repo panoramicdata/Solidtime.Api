@@ -1,0 +1,534 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta http-equiv="Content-Security-Policy" content="default-src * 'unsafe-inline' 'unsafe-eval' data: blob:;">
+    <title>Time Tracker Comparison Dashboard</title>
+    <!-- Load Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+    
+    <script>
+        // Check for dark mode preference and apply 'dark' class to html element immediately
+        if (window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches) {
+            document.documentElement.classList.add('dark');
+        }
+    </script>
+    
+    <style>
+        /* Custom scrollbar for aesthetic, modern look */
+        ::-webkit-scrollbar {
+            width: 8px;
+            height: 8px;
+        }
+        ::-webkit-scrollbar-track {
+            background: #f1f1f1;
+        }
+        .dark ::-webkit-scrollbar-track {
+            background: #1f2937; /* dark:bg-gray-800 */
+        }
+        ::-webkit-scrollbar-thumb {
+            background: #cbd5e1; /* slate-300 */
+            border-radius: 4px;
+        }
+        .dark ::-webkit-scrollbar-thumb {
+            background: #475569; /* dark:slate-600 */
+        }
+        ::-webkit-scrollbar-thumb:hover {
+            background: #94a3b8; /* slate-400 */
+        }
+    </style>
+</head>
+<body class="bg-gray-50 dark:bg-slate-900 font-sans p-2 md:p-4 transition-colors duration-300">
+
+    <div class="w-full">
+        <header class="mb-6">
+            <h1 class="text-3xl md:text-4xl font-extrabold text-slate-800 dark:text-white mb-2">Time Tracker Comparison</h1>
+            <p class="text-lg md:text-xl text-slate-500 dark:text-slate-400">Comparing SolidTime and its leading alternatives based on key feature scores.</p>
+        </header>
+
+        <!-- Filter & Search Controls -->
+        <div class="bg-white dark:bg-slate-800 p-4 rounded-xl shadow-lg dark:shadow-2xl mb-4 flex flex-col md:flex-row space-y-4 md:space-y-0 md:space-x-4 transition-colors duration-300">
+            <div class="flex-1">
+                <label for="search-input" class="block text-sm font-medium text-gray-700 dark:text-slate-300 mb-1">Search Product Name</label>
+                <input type="text" id="search-input" placeholder="e.g., Toggl, SolidTime..." 
+                       class="w-full p-2 border border-gray-300 dark:border-slate-600 rounded-lg focus:ring-blue-500 focus:border-blue-500 dark:bg-slate-700 dark:text-white transition duration-150">
+            </div>
+            <div class="flex-1">
+                <label for="min-score-select" class="block text-sm font-medium text-gray-700 dark:text-slate-300 mb-1">Minimum Score for Any Category</label>
+                <select id="min-score-select" 
+                        class="w-full p-2 border border-gray-300 dark:border-slate-600 rounded-lg focus:ring-blue-500 focus:border-blue-500 dark:bg-slate-700 dark:text-white transition duration-150 bg-white">
+                    <option value="0">Show All (0+ Stars)</option>
+                    <option value="1">1+ Star</option>
+                    <option value="2">2+ Stars</option>
+                    <option value="3">3+ Stars</option>
+                    <option value="4">4+ Stars</option>
+                    <option value="5">5 Stars Only</option>
+                </select>
+            </div>
+            <button onclick="resetFilters()" 
+                    class="md:self-end bg-slate-600 hover:bg-slate-700 dark:bg-indigo-600 dark:hover:bg-indigo-700 text-white font-bold py-2.5 px-4 rounded-lg shadow-md transition duration-200">
+                <i class="fas fa-undo mr-1"></i> Reset Filters
+            </button>
+        </div>
+
+        <!-- Comparison Table Container -->
+        <div class="bg-white dark:bg-slate-800 rounded-xl shadow-xl dark:shadow-2xl overflow-hidden transition-colors duration-300">
+            <div class="overflow-x-auto">
+            <table id="comparison-table" class="w-full divide-y divide-gray-200 dark:divide-slate-700">
+                <thead class="bg-slate-100 dark:bg-slate-700">
+                    <tr>
+                        <th onclick="sortTable(0)" class="px-2 py-2 text-left text-[10px] md:text-xs font-semibold text-slate-600 dark:text-slate-300 uppercase tracking-wider cursor-pointer hover:bg-slate-200 dark:hover:bg-slate-600 rounded-tl-xl transition duration-150 sticky left-0 bg-slate-100 dark:bg-slate-700 z-10">
+                            Product
+                        </th>
+                        <th onclick="sortTable(1)" class="px-2 py-2 text-left text-[10px] md:text-xs font-semibold text-slate-600 dark:text-slate-300 uppercase tracking-wider cursor-pointer hover:bg-slate-200 dark:hover:bg-slate-600 transition duration-150 whitespace-nowrap">
+                            Open Source <span class="sort-icon" data-col="1"></span>
+                        </th>
+                        <th onclick="sortTable(2)" class="px-2 py-2 text-left text-[10px] md:text-xs font-semibold text-slate-600 dark:text-slate-300 uppercase tracking-wider cursor-pointer hover:bg-slate-200 dark:hover:bg-slate-600 transition duration-150 whitespace-nowrap">
+                            Self-Host/Docker <span class="sort-icon" data-col="2"></span>
+                        </th>
+                        <th onclick="sortTable(3)" class="px-2 py-2 text-left text-[10px] md:text-xs font-semibold text-slate-600 dark:text-slate-300 uppercase tracking-wider cursor-pointer hover:bg-slate-200 dark:hover:bg-slate-600 transition duration-150 whitespace-nowrap">
+                            Invoicing <span class="sort-icon" data-col="3"></span>
+                        </th>
+                        <th onclick="sortTable(4)" class="px-2 py-2 text-left text-[10px] md:text-xs font-semibold text-slate-600 dark:text-slate-300 uppercase tracking-wider cursor-pointer hover:bg-slate-200 dark:hover:bg-slate-600 transition duration-150 whitespace-nowrap">
+                            Team Access <span class="sort-icon" data-col="4"></span>
+                        </th>
+                        <th onclick="sortTable(5)" class="px-2 py-2 text-left text-[10px] md:text-xs font-semibold text-slate-600 dark:text-slate-300 uppercase tracking-wider cursor-pointer hover:bg-slate-200 dark:hover:bg-slate-600 transition duration-150 whitespace-nowrap">
+                            Auto Track <span class="sort-icon" data-col="5"></span>
+                        </th>
+                        <th onclick="sortTable(6)" class="px-2 py-2 text-left text-[10px] md:text-xs font-semibold text-slate-600 dark:text-slate-300 uppercase tracking-wider cursor-pointer hover:bg-slate-200 dark:hover:bg-slate-600 transition duration-150 whitespace-nowrap">
+                            Integrations <span class="sort-icon" data-col="6"></span>
+                        </th>
+                        <th onclick="sortTable(7)" class="px-2 py-2 text-left text-[10px] md:text-xs font-semibold text-slate-600 dark:text-slate-300 uppercase tracking-wider cursor-pointer hover:bg-slate-200 dark:hover:bg-slate-600 transition duration-150 whitespace-nowrap">
+                            Free Plan <span class="sort-icon" data-col="7"></span>
+                        </th>
+                        <th onclick="sortTable(8)" class="px-2 py-2 text-left text-[10px] md:text-xs font-semibold text-slate-600 dark:text-slate-300 uppercase tracking-wider cursor-pointer hover:bg-slate-200 dark:hover:bg-slate-600 rounded-tr-xl transition duration-150 whitespace-nowrap">
+                            Mobile/PWA <span class="sort-icon" data-col="8"></span>
+                        </th>
+                    </tr>
+                </thead>
+                <tbody id="table-body" class="bg-white dark:bg-slate-800 divide-y divide-gray-100 dark:divide-slate-700">
+                    <!-- Rows will be injected here by JavaScript -->
+                </tbody>
+            </table>
+            </div>
+        </div>
+
+    </div>
+
+    <script>
+        // Data for comparison: scores are 1 (Worst) to 5 (Best)
+        const productsData = [
+            // Scores based on general public consensus and the search results
+            { 
+                name: "SolidTime", 
+                description: "Modern open-source solution with self-hosting/on-premise options.", 
+                scores: { 
+                    openSource: 5, 
+                    selfHosting: 5, 
+                    invoicing: 4, 
+                    teamAccess: 4,
+                    autoTracking: 2,
+                    integrations: 3,
+                    freePlan: 5, 
+                    mobile: 4 
+                } 
+            },
+            { 
+                name: "Toggl Track", 
+                description: "Simplicity leader with generous multi-user free plan and large ecosystem.", 
+                scores: { 
+                    openSource: 1, 
+                    selfHosting: 1, 
+                    invoicing: 2, 
+                    teamAccess: 5,
+                    autoTracking: 4,
+                    integrations: 5,
+                    freePlan: 5, 
+                    mobile: 5 
+                } 
+            },
+            { 
+                name: "Clockify", 
+                description: "Popular, wide-ranging feature set, often advertised as the best free option.", 
+                scores: { 
+                    openSource: 1, 
+                    selfHosting: 2, 
+                    invoicing: 3, 
+                    teamAccess: 4,
+                    autoTracking: 3,
+                    integrations: 4,
+                    freePlan: 5, 
+                    mobile: 4 
+                } 
+            },
+            { 
+                name: "Harvest", 
+                description: "Industry standard for agencies, renowned for strong invoicing and team management.", 
+                scores: { 
+                    openSource: 1, 
+                    selfHosting: 1, 
+                    invoicing: 5, 
+                    teamAccess: 5,
+                    autoTracking: 2,
+                    integrations: 5,
+                    freePlan: 2, 
+                    mobile: 4 
+                } 
+            },
+            { 
+                name: "DeskTime", 
+                description: "Focuses on workforce management, productivity, and passive, automatic tracking.", 
+                scores: { 
+                    openSource: 1, 
+                    selfHosting: 1, 
+                    invoicing: 3, 
+                    teamAccess: 4,
+                    autoTracking: 5,
+                    integrations: 3,
+                    freePlan: 1, 
+                    mobile: 3 
+                } 
+            },
+            { 
+                name: "TrackingTime", 
+                description: "Offers a free plan with unlimited users, good for project and task management.", 
+                scores: { 
+                    openSource: 1, 
+                    selfHosting: 1, 
+                    invoicing: 3, 
+                    teamAccess: 4,
+                    autoTracking: 3,
+                    integrations: 4,
+                    freePlan: 4, 
+                    mobile: 4 
+                } 
+            },
+            { 
+                name: "QuickBooks Time", 
+                description: "Formerly TSheets, excellent for payroll integration and GPS tracking for field teams.", 
+                scores: { 
+                    openSource: 1, 
+                    selfHosting: 1, 
+                    invoicing: 5, 
+                    teamAccess: 5,
+                    autoTracking: 3,
+                    integrations: 5,
+                    freePlan: 1, 
+                    mobile: 5 
+                } 
+            },
+            { 
+                name: "Wrike", 
+                description: "Comprehensive project management platform with robust time tracking capabilities.", 
+                scores: { 
+                    openSource: 1, 
+                    selfHosting: 1, 
+                    invoicing: 2, 
+                    teamAccess: 5,
+                    autoTracking: 2,
+                    integrations: 5,
+                    freePlan: 3, 
+                    mobile: 4 
+                } 
+            },
+            { 
+                name: "Timely", 
+                description: "AI-powered automatic time tracking with memory tracker and smart scheduling.", 
+                scores: { 
+                    openSource: 1, 
+                    selfHosting: 1, 
+                    invoicing: 3, 
+                    teamAccess: 4,
+                    autoTracking: 5,
+                    integrations: 4,
+                    freePlan: 2, 
+                    mobile: 4 
+                } 
+            },
+            { 
+                name: "RescueTime", 
+                description: "Automatic productivity tracking focused on individual time optimization.", 
+                scores: { 
+                    openSource: 1, 
+                    selfHosting: 1, 
+                    invoicing: 1, 
+                    teamAccess: 2,
+                    autoTracking: 5,
+                    integrations: 3,
+                    freePlan: 3, 
+                    mobile: 3 
+                } 
+            },
+            { 
+                name: "Everhour", 
+                description: "Integrates deeply with project management tools, excellent for agencies.", 
+                scores: { 
+                    openSource: 1, 
+                    selfHosting: 1, 
+                    invoicing: 4, 
+                    teamAccess: 4,
+                    autoTracking: 2,
+                    integrations: 5,
+                    freePlan: 3, 
+                    mobile: 4 
+                } 
+            },
+            { 
+                name: "Hubstaff", 
+                description: "Employee monitoring with screenshots, activity levels, and GPS tracking.", 
+                scores: { 
+                    openSource: 1, 
+                    selfHosting: 1, 
+                    invoicing: 3, 
+                    teamAccess: 5,
+                    autoTracking: 5,
+                    integrations: 4,
+                    freePlan: 2, 
+                    mobile: 5 
+                } 
+            },
+            { 
+                name: "Replicon", 
+                description: "Enterprise-grade time tracking and workforce management solution.", 
+                scores: { 
+                    openSource: 1, 
+                    selfHosting: 2, 
+                    invoicing: 4, 
+                    teamAccess: 5,
+                    autoTracking: 3,
+                    integrations: 5,
+                    freePlan: 1, 
+                    mobile: 4 
+                } 
+            },
+            { 
+                name: "Kimai", 
+                description: "Free, open-source time tracking with self-hosting capabilities.", 
+                scores: { 
+                    openSource: 5, 
+                    selfHosting: 5, 
+                    invoicing: 3, 
+                    teamAccess: 3,
+                    autoTracking: 1,
+                    integrations: 2,
+                    freePlan: 5, 
+                    mobile: 3 
+                } 
+            },
+            { 
+                name: "My Hours", 
+                description: "User-friendly time tracker with excellent reporting and project management.", 
+                scores: { 
+                    openSource: 1, 
+                    selfHosting: 1, 
+                    invoicing: 3, 
+                    teamAccess: 4,
+                    autoTracking: 1,
+                    integrations: 3,
+                    freePlan: 4, 
+                    mobile: 4 
+                } 
+            },
+            { 
+                name: "TimeCamp", 
+                description: "Automatic time tracking with budgeting and computer activity monitoring.", 
+                scores: { 
+                    openSource: 1, 
+                    selfHosting: 1, 
+                    invoicing: 4, 
+                    teamAccess: 4,
+                    autoTracking: 5,
+                    integrations: 5,
+                    freePlan: 3, 
+                    mobile: 4 
+                } 
+            }
+        ];
+
+        let currentSortColumn = null;
+        let isAscending = true;
+
+        const tableBody = document.getElementById('table-body');
+        const searchInput = document.getElementById('search-input');
+        const minScoreSelect = document.getElementById('min-score-select');
+
+        // Helper function to render star icons
+        const renderStars = (score) => {
+            const maxScore = 5;
+            let stars = '';
+            for (let i = 0; i < maxScore; i++) {
+                // Determine star icon based on score
+                if (i < score) {
+                    // Full star
+                    stars += `<i class="fas fa-star text-yellow-400"></i>`;
+                } else {
+                    // Empty/Outline star
+                    stars += `<i class="far fa-star text-gray-300 dark:text-slate-600"></i>`;
+                }
+            }
+            // Add a data-score attribute for sorting/filtering consistency
+            return `<div class="flex items-center space-x-1" data-score="${score}">${stars}</div>`;
+        };
+
+        // Renders the full table based on the current data array
+        const renderTable = (data) => {
+            tableBody.innerHTML = ''; // Clear previous rows
+            // Note: The order here must match the column order in the HTML <thead>
+            const columns = [
+                'name', 'openSource', 'selfHosting', 'invoicing', 
+                'teamAccess', 'autoTracking', 'integrations', 
+                'freePlan', 'mobile'
+            ];
+            
+            data.forEach(product => {
+                const row = document.createElement('tr');
+                // Alternating row colors for readability
+                row.className = 'hover:bg-blue-50 dark:hover:bg-slate-700 transition duration-150 even:bg-white dark:even:bg-slate-800 odd:bg-gray-50 dark:odd:bg-slate-900';
+
+                // 1. Product Name Cell
+                const nameCell = document.createElement('td');
+                nameCell.className = 'px-2 py-3 text-sm font-medium text-slate-900 dark:text-white sticky left-0 bg-white dark:bg-slate-800 z-10';
+                nameCell.innerHTML = `
+                    <div class="font-bold whitespace-nowrap text-xs md:text-sm">${product.name}</div>
+                    <div class="text-[10px] md:text-xs text-slate-500 dark:text-slate-400 max-w-[150px] md:max-w-[200px] truncate" title="${product.description}">${product.description}</div>
+                `;
+                row.appendChild(nameCell);
+
+                // 2-8. Score Cells (excluding 'name')
+                columns.slice(1).forEach(key => {
+                    const scoreCell = document.createElement('td');
+                    scoreCell.className = 'px-2 py-3 whitespace-nowrap text-sm text-gray-500';
+                    scoreCell.innerHTML = renderStars(product.scores[key]);
+                    row.appendChild(scoreCell);
+                });
+
+                tableBody.appendChild(row);
+            });
+
+            updateSortIcons();
+        };
+        
+        // Function to filter the data based on user input
+        const filterData = () => {
+            const searchQuery = searchInput.value.toLowerCase().trim();
+            const minScore = parseInt(minScoreSelect.value, 10);
+
+            const filteredData = productsData.filter(product => {
+                // 1. Name search filter
+                const nameMatch = product.name.toLowerCase().includes(searchQuery);
+
+                // 2. Minimum score filter (checks if *any* score meets the minimum)
+                const scores = Object.values(product.scores);
+                const scoreMatch = scores.some(score => score >= minScore);
+
+                return nameMatch && scoreMatch;
+            });
+            
+            // Re-sort the filtered data if a column is currently sorted
+            if (currentSortColumn !== null) {
+                sortAndRender(filteredData, currentSortColumn, isAscending);
+            } else {
+                renderTable(filteredData);
+            }
+        };
+
+        // Function to perform the actual sorting and re-render
+        const sortAndRender = (data, colIndex, ascending) => {
+            // Map column index to score key name
+            const keyMap = {
+                1: 'openSource',
+                2: 'selfHosting',
+                3: 'invoicing',
+                4: 'teamAccess',
+                5: 'autoTracking',
+                6: 'integrations',
+                7: 'freePlan',
+                8: 'mobile'
+            };
+            const sortKey = keyMap[colIndex];
+
+            // Sort logic: use sortKey to get the numeric score
+            data.sort((a, b) => {
+                const scoreA = a.scores[sortKey];
+                const scoreB = b.scores[sortKey];
+
+                if (ascending) {
+                    return scoreA - scoreB;
+                } else {
+                    return scoreB - scoreA;
+                }
+            });
+
+            renderTable(data);
+        };
+
+        // Main sorting function triggered by header click
+        window.sortTable = (colIndex) => {
+            // Only columns 1-8 are sortable by score (0 is name)
+            if (colIndex === 0) return; 
+
+            if (currentSortColumn === colIndex) {
+                isAscending = !isAscending; // Toggle direction
+            } else {
+                currentSortColumn = colIndex;
+                isAscending = false; // Default to descending (highest score first)
+            }
+
+            filterData(); // Re-sorts the currently filtered dataset
+        };
+
+        // Update sort icons in the header
+        const updateSortIcons = () => {
+            document.querySelectorAll('.sort-icon').forEach(icon => {
+                icon.innerHTML = '';
+            });
+
+            if (currentSortColumn !== null) {
+                const iconElement = document.querySelector(`.sort-icon[data-col="${currentSortColumn}"]`);
+                if (iconElement) {
+                    // Use different icon colors in dark mode for better visibility
+                    const iconColor = document.documentElement.classList.contains('dark') ? 'text-indigo-400' : 'text-xs text-slate-800';
+                    iconElement.innerHTML = isAscending ? 
+                        `<i class="fas fa-chevron-up ${iconColor} ml-1"></i>` : 
+                        `<i class="fas fa-chevron-down ${iconColor} ml-1"></i>`;
+                }
+            }
+        };
+
+        // Reset all filters and sorting
+        window.resetFilters = () => {
+            searchInput.value = '';
+            minScoreSelect.value = '0';
+            currentSortColumn = null;
+            isAscending = true;
+            filterData();
+        };
+
+        // Attach event listeners
+        searchInput.addEventListener('input', filterData);
+        minScoreSelect.addEventListener('change', filterData);
+
+        // Initial render on load
+        document.addEventListener('DOMContentLoaded', () => {
+            // Default sort: SolidTime's main strength (Self-Hosting / Docker) descending
+            currentSortColumn = 2; // Index of Self-Hosting column
+            isAscending = false; 
+            filterData(); // This handles the initial sorting and rendering
+
+            // Add listener for dark mode changes (for when the user toggles system preference while the page is open)
+            window.matchMedia('(prefers-color-scheme: dark)').addEventListener('change', event => {
+                if (event.matches) {
+                    document.documentElement.classList.add('dark');
+                } else {
+                    document.documentElement.classList.remove('dark');
+                }
+                // Rerender to ensure all dynamic elements (like star icons) update their colors
+                filterData(); 
+            });
+        });
+    </script>
+
+</body>
+</html>
