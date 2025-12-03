@@ -16,6 +16,7 @@
     <File Path="Publish.ps1" />
     <File Path="README.md" />
     <File Path="SECURITY.md" />
+    <File Path="solidtime-openapi.json" />
     <File Path="version.json" />
   </Folder>
   <Project Path="Solidtime.Api.Test/Solidtime.Api.Test.csproj" />

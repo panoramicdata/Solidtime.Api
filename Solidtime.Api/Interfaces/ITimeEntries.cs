@@ -26,19 +26,6 @@ public interface ITimeEntries
 		CancellationToken cancellationToken);
 
 	/// <summary>
-	/// Gets a specific time entry by ID
-	/// </summary>
-	/// <param name="organizationId">The organization ID</param>
-	/// <param name="timeEntryId">The time entry ID</param>
-	/// <param name="cancellationToken">Cancellation token</param>
-	/// <returns>The time entry</returns>
-	[Get("/v1/organizations/{organization}/time-entries/{timeEntry}")]
-	Task<DataWrapper<TimeEntry>> GetByIdAsync(
-		[AliasAs("organization")] string organizationId,
-		[AliasAs("timeEntry")] string timeEntryId,
-		CancellationToken cancellationToken);
-
-	/// <summary>
 	/// Creates a new time entry
 	/// </summary>
 	/// <param name="organizationId">The organization ID</param>
