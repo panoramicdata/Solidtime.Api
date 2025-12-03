@@ -15,7 +15,7 @@ public class Report : SolidtimeEntityBase
 	/// The report's description
 	/// </summary>
 	[JsonPropertyName("description")]
-	public string? Description { get; set; }
+	public required string? Description { get; set; }
 
 	/// <summary>
 	/// Whether the report is public
@@ -24,10 +24,16 @@ public class Report : SolidtimeEntityBase
 	public required bool IsPublic { get; set; }
 
 	/// <summary>
-	/// The organization ID this report belongs to
+	/// Date until the report is public
 	/// </summary>
-	[JsonPropertyName("organization_id")]
-	public required string OrganizationId { get; set; }
+	[JsonPropertyName("public_until")]
+	public required string? PublicUntil { get; set; }
+
+	/// <summary>
+	/// Get link to access the report externally, not set if the report is private
+	/// </summary>
+	[JsonPropertyName("shareable_link")]
+	public required string? ShareableLink { get; set; }
 
 	/// <summary>
 	/// Report properties defining what data to include

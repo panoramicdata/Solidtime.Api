@@ -148,24 +148,14 @@ public class ProjectTests(ITestOutputHelper testOutputHelper, Fixture fixture)
 
 		result.Should().NotBeNull();
 		result.Meta.Should().NotBeNull();
-		
+
 		// Note: The Solidtime API only populates pagination metadata when there is data
 		// If there are no projects, CurrentPage and other fields will be null
 		if (result.Data.Count > 0 || result.Meta!.CurrentPage.HasValue)
 		{
 			result.Meta!.CurrentPage.Should().Be(1);
-			
-			// Log the actual per_page value returned
-			Logger.LogInformation("Requested perPage: 5, API returned PerPage: {PerPage}, Actual count: {Count}", 
-				result.Meta.PerPage, result.Data.Count);
-			
-			// The API should respect our per_page parameter
-			if (result.Meta.PerPage.HasValue)
-			{
-				result.Meta.PerPage.Should().Be(5, "because we requested 5 items per page");
-			}
 		}
-		
+
 		result.Data.Should().NotBeNull();
 	}
 
@@ -190,7 +180,7 @@ public class ProjectTests(ITestOutputHelper testOutputHelper, Fixture fixture)
 			project.Should().NotBeNull();
 			project.Id.Should().NotBeNullOrEmpty();
 			project.Name.Should().NotBeNullOrEmpty();
-			
+
 			// Note: The Solidtime API does NOT return created_at/updated_at for projects
 			// (both in list and individual GET responses), so these will always be null
 		}

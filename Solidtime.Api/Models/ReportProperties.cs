@@ -6,32 +6,100 @@ namespace Solidtime.Api.Models;
 public class ReportProperties
 {
 	/// <summary>
-	/// Start date for the report (ISO 8601 format)
+	/// Start date for the report (ISO 8601 datetime format with timezone)
 	/// </summary>
 	[JsonPropertyName("start")]
 	public required string Start { get; set; }
 
 	/// <summary>
-	/// End date for the report (ISO 8601 format)
+	/// End date for the report (ISO 8601 datetime format with timezone)
 	/// </summary>
 	[JsonPropertyName("end")]
 	public required string End { get; set; }
 
 	/// <summary>
-	/// Primary grouping for the report (e.g., "project", "task", "client", "tag")
+	/// Primary grouping for the report (e.g., "project", "task", "client", "tag", "user", "member")
 	/// </summary>
 	[JsonPropertyName("group")]
 	public required string Group { get; set; }
 
 	/// <summary>
-	/// Secondary grouping for the report (e.g., "project", "task", "client", "tag", "none")
+	/// Secondary grouping for the report. Required field.
+	/// Valid values: "project", "task", "client", "tag", "user", "member"
 	/// </summary>
 	[JsonPropertyName("sub_group")]
 	public required string SubGroup { get; set; }
 
 	/// <summary>
-	/// Historical grouping for the report (e.g., "day", "week", "month", "year", "none")
+	/// Historical grouping for the report. Required field.
+	/// Valid values: "day", "week", "month", "year"
 	/// </summary>
 	[JsonPropertyName("history_group")]
 	public required string HistoryGroup { get; set; }
+
+	/// <summary>
+	/// Whether the report properties are active
+	/// </summary>
+	[JsonPropertyName("active")]
+	public bool? Active { get; set; }
+
+	/// <summary>
+	/// List of member IDs to filter the report by
+	/// </summary>
+	[JsonPropertyName("member_ids")]
+	public List<string>? MemberIds { get; set; }
+
+	/// <summary>
+	/// Filter by billable status
+	/// </summary>
+	[JsonPropertyName("billable")]
+	public bool? Billable { get; set; }
+
+	/// <summary>
+	/// List of project IDs to filter the report by
+	/// </summary>
+	[JsonPropertyName("project_ids")]
+	public List<string>? ProjectIds { get; set; }
+
+	/// <summary>
+	/// List of tag IDs to filter the report by
+	/// </summary>
+	[JsonPropertyName("tag_ids")]
+	public List<string>? TagIds { get; set; }
+
+	/// <summary>
+	/// List of task IDs to filter the report by
+	/// </summary>
+	[JsonPropertyName("task_ids")]
+	public List<string>? TaskIds { get; set; }
+
+	/// <summary>
+	/// List of client IDs to filter the report by
+	/// </summary>
+	[JsonPropertyName("client_ids")]
+	public List<string>? ClientIds { get; set; }
+
+	/// <summary>
+	/// Starting day of the week
+	/// </summary>
+	[JsonPropertyName("week_start")]
+	public string? WeekStart { get; set; }
+
+	/// <summary>
+	/// Timezone (e.g., "Europe/Berlin" or "America/New_York")
+	/// </summary>
+	[JsonPropertyName("timezone")]
+	public string? Timezone { get; set; }
+
+	/// <summary>
+	/// Rounding type for time entries (up, down, nearest)
+	/// </summary>
+	[JsonPropertyName("rounding_type")]
+	public string? RoundingType { get; set; }
+
+	/// <summary>
+	/// Rounding minutes for time entries
+	/// </summary>
+	[JsonPropertyName("rounding_minutes")]
+	public int? RoundingMinutes { get; set; }
 }
