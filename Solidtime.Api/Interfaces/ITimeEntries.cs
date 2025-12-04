@@ -9,15 +9,19 @@ public interface ITimeEntries
 	/// Gets all time entries in an organization
 	/// </summary>
 	/// <param name="organizationId">The organization ID</param>
-	/// <param name="page">Page number for pagination (optional)</param>
-	/// <param name="perPage">Number of items per page (optional)</param>
+	/// <param name="limit">Limit the number of returned time entries (default: 150, max: 500)</param>
+	/// <param name="offset">Skip the first n time entries (default: 0)</param>
 	/// <param name="cancellationToken">Cancellation token</param>
 	/// <returns>A paginated list of time entries</returns>
+	/// <remarks>
+	/// Note: This endpoint uses limit/offset pagination, not page/perPage.
+	/// The response includes a meta object with total count information.
+	/// </remarks>
 	[Get("/v1/organizations/{organization}/time-entries")]
 	Task<PaginatedResponse<TimeEntry>> GetAsync(
 		[AliasAs("organization")] string organizationId,
-		[Query] int? page,
-		[Query, AliasAs("per_page")] int? perPage,
+		[Query] int? limit,
+		[Query] int? offset,
 		CancellationToken cancellationToken);
 
 	/// <summary>

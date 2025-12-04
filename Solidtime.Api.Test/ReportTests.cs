@@ -27,12 +27,6 @@ public class ReportTests(ITestOutputHelper testOutputHelper, Fixture fixture)
 	/// <summary>
 	/// Tests that creating, updating, and deleting a report succeeds
 	/// </summary>
-	/// <remarks>
-	/// KNOWN ISSUE: The Solidtime API's report properties.sub_group field validation is rejecting all tested values.
-	/// Tested values that failed: "none", null, "member", "task", "project", "client", "tag", "user"
-	/// This appears to be an API limitation or the feature may not be fully production-ready yet.
-	/// Need to investigate valid values for sub_group field or check if Reports API is incomplete.
-	/// </remarks>
 	[Fact]
 	public async Task Reports_CreateUpdateDelete_Succeeds()
 	{
@@ -52,7 +46,7 @@ public class ReportTests(ITestOutputHelper testOutputHelper, Fixture fixture)
 					Start = "2024-01-01T00:00:00Z",
 					End = "2024-12-31T23:59:59Z",
 					Group = "project",
-					SubGroup = "member",
+					SubGroup = "task",
 					HistoryGroup = "month"
 				}
 			};
@@ -154,9 +148,6 @@ public class ReportTests(ITestOutputHelper testOutputHelper, Fixture fixture)
 	/// <summary>
 	/// Tests that report timestamps are handled correctly
 	/// </summary>
-	/// <remarks>
-	/// KNOWN ISSUE: Same API limitation as Reports_CreateUpdateDelete_Succeeds - sub_group validation fails
-	/// </remarks>
 	[Fact]
 	public async Task Reports_Get_HasValidTimestamps()
 	{
@@ -176,7 +167,7 @@ public class ReportTests(ITestOutputHelper testOutputHelper, Fixture fixture)
 					Start = "2024-01-01T00:00:00Z",
 					End = "2024-12-31T23:59:59Z",
 					Group = "project",
-					SubGroup = "member",
+					SubGroup = "task",
 					HistoryGroup = "day"
 				}
 			};
@@ -220,9 +211,6 @@ public class ReportTests(ITestOutputHelper testOutputHelper, Fixture fixture)
 	/// <summary>
 	/// Tests that getting a report by ID succeeds
 	/// </summary>
-	/// <remarks>
-	/// KNOWN ISSUE: Same API limitation as Reports_CreateUpdateDelete_Succeeds - sub_group validation fails
-	/// </remarks>
 	[Fact]
 	public async Task Reports_GetById_Succeeds()
 	{

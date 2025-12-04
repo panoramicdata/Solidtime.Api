@@ -6,26 +6,27 @@ namespace Solidtime.Api.Models;
 public class ReportProperties
 {
 	/// <summary>
-	/// Start date for the report (ISO 8601 datetime format with timezone)
+	/// Start date for the report (ISO 8601 format: Y-m-d\TH:i:s\Z, e.g., "2024-01-01T00:00:00Z")
 	/// </summary>
 	[JsonPropertyName("start")]
 	public required string Start { get; set; }
 
 	/// <summary>
-	/// End date for the report (ISO 8601 datetime format with timezone)
+	/// End date for the report (ISO 8601 format: Y-m-d\TH:i:s\Z, e.g., "2024-12-31T23:59:59Z")
 	/// </summary>
 	[JsonPropertyName("end")]
 	public required string End { get; set; }
 
 	/// <summary>
-	/// Primary grouping for the report (e.g., "project", "task", "client", "tag", "user", "member")
+	/// Primary grouping for the report.
+	/// Valid values: "day", "week", "month", "year", "user", "project", "task", "client", "billable", "description", "tag"
 	/// </summary>
 	[JsonPropertyName("group")]
 	public required string Group { get; set; }
 
 	/// <summary>
 	/// Secondary grouping for the report. Required field.
-	/// Valid values: "project", "task", "client", "tag", "user", "member"
+	/// Valid values: "day", "week", "month", "year", "user", "project", "task", "client", "billable", "description", "tag"
 	/// </summary>
 	[JsonPropertyName("sub_group")]
 	public required string SubGroup { get; set; }

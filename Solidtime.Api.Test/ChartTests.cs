@@ -9,81 +9,6 @@ public class ChartTests(ITestOutputHelper testOutputHelper, Fixture fixture)
 	: SolidtimeTest(testOutputHelper, fixture)
 {
 	/// <summary>
-	/// Tests that getting weekly hours chart succeeds
-	/// </summary>
-	[Fact]
-	public async Task Charts_GetWeeklyHours_Succeeds()
-	{
-		var organizationId = await GetOrganizationIdAsync();
-
-		var result = await SolidtimeClient
-			.Charts
-			.GetWeeklyHoursAsync(organizationId, null, null, CancellationToken);
-
-		result.Should().NotBeNull();
-		// Data may be empty if there are no time entries
-	}
-
-	/// <summary>
-	/// Tests that getting weekly hours chart with date range succeeds
-	/// </summary>
-	[Fact]
-	public async Task Charts_GetWeeklyHours_WithDateRange_Succeeds()
-	{
-		var organizationId = await GetOrganizationIdAsync();
-
-		// Get last 4 weeks of data
-		var endDate = DateTimeOffset.UtcNow;
-		var startDate = endDate.AddDays(-28);
-
-		var result = await SolidtimeClient
-			.Charts
-			.GetWeeklyHoursAsync(
-				organizationId,
-				startDate.ToString("yyyy-MM-dd", CultureInfo.InvariantCulture),
-				endDate.ToString("yyyy-MM-dd", CultureInfo.InvariantCulture),
-				CancellationToken);
-
-		result.Should().NotBeNull();
-
-		// If there is data, verify the structure
-		if (result.Count > 0)
-		{
-			var dataPoint = result.First();
-			dataPoint.Name.Should().NotBeNullOrWhiteSpace();
-			dataPoint.Color.Should().NotBeNullOrWhiteSpace();
-			dataPoint.Value.Should().BeGreaterThanOrEqualTo(0);
-		}
-	}
-
-	/// <summary>
-	/// Tests that chart data has valid structure
-	/// </summary>
-	[Fact]
-	public async Task Charts_WeeklyHours_HasValidStructure()
-	{
-		var organizationId = await GetOrganizationIdAsync();
-
-		var result = await SolidtimeClient
-			.Charts
-			.GetWeeklyHoursAsync(organizationId, null, null, CancellationToken);
-
-		result.Should().NotBeNull();
-
-		// If there is data, verify all required fields are present
-		if (result.Count > 0)
-		{
-			foreach (var dataPoint in result)
-			{
-				dataPoint.Name.Should().NotBeNullOrWhiteSpace();
-				dataPoint.Color.Should().NotBeNullOrWhiteSpace();
-				dataPoint.Value.Should().BeGreaterThanOrEqualTo(0);
-				// ID may be null for aggregated data like "No project"
-			}
-		}
-	}
-
-	/// <summary>
 	/// Tests that getting weekly project overview chart succeeds
 	/// </summary>
 	[Fact]
@@ -93,42 +18,10 @@ public class ChartTests(ITestOutputHelper testOutputHelper, Fixture fixture)
 
 		var result = await SolidtimeClient
 			.Charts
-			.GetWeeklyProjectOverviewAsync(organizationId, null, null, CancellationToken);
+			.GetWeeklyProjectOverviewAsync(organizationId, CancellationToken);
 
 		result.Should().NotBeNull();
 		// Data may be empty if there are no time entries
-	}
-
-	/// <summary>
-	/// Tests that getting weekly project overview chart with date range succeeds
-	/// </summary>
-	[Fact]
-	public async Task Charts_GetWeeklyProjectOverview_WithDateRange_Succeeds()
-	{
-		var organizationId = await GetOrganizationIdAsync();
-
-		// Get last 4 weeks of data
-		var endDate = DateTimeOffset.UtcNow;
-		var startDate = endDate.AddDays(-28);
-
-		var result = await SolidtimeClient
-			.Charts
-			.GetWeeklyProjectOverviewAsync(
-				organizationId,
-				startDate.ToString("yyyy-MM-dd", CultureInfo.InvariantCulture),
-				endDate.ToString("yyyy-MM-dd", CultureInfo.InvariantCulture),
-				CancellationToken);
-
-		result.Should().NotBeNull();
-
-		// If there is data, verify the structure
-		if (result.Count > 0)
-		{
-			var dataPoint = result.First();
-			dataPoint.Name.Should().NotBeNullOrWhiteSpace();
-			dataPoint.Color.Should().NotBeNullOrWhiteSpace();
-			dataPoint.Value.Should().BeGreaterThanOrEqualTo(0);
-		}
 	}
 
 	/// <summary>
@@ -141,7 +34,7 @@ public class ChartTests(ITestOutputHelper testOutputHelper, Fixture fixture)
 
 		var result = await SolidtimeClient
 			.Charts
-			.GetWeeklyProjectOverviewAsync(organizationId, null, null, CancellationToken);
+			.GetWeeklyProjectOverviewAsync(organizationId, CancellationToken);
 
 		result.Should().NotBeNull();
 
@@ -153,44 +46,160 @@ public class ChartTests(ITestOutputHelper testOutputHelper, Fixture fixture)
 				dataPoint.Name.Should().NotBeNullOrWhiteSpace();
 				dataPoint.Color.Should().NotBeNullOrWhiteSpace();
 				dataPoint.Value.Should().BeGreaterThanOrEqualTo(0);
-				// ID may be null for aggregated data
 			}
 		}
 	}
 
 	/// <summary>
-	/// Tests that chart data can be retrieved for a specific month
-	/// NOTE: This test may fail with 404 if the charts feature is not enabled/available in the test organization.
-	/// The charts endpoints may be a premium feature or require specific configuration in Solidtime.
+	/// Tests that getting weekly history chart succeeds
 	/// </summary>
 	[Fact]
-	public async Task Charts_GetDataForSpecificMonth_Succeeds()
+	public async Task Charts_GetWeeklyHistory_Succeeds()
 	{
 		var organizationId = await GetOrganizationIdAsync();
 
-		// Get data for current month
-		var now = DateTimeOffset.UtcNow;
-		var startDate = new DateTimeOffset(now.Year, now.Month, 1, 0, 0, 0, TimeSpan.Zero);
-		var endDate = startDate.AddMonths(1).AddDays(-1);
-
-		var hoursResult = await SolidtimeClient
+		var result = await SolidtimeClient
 			.Charts
-			.GetWeeklyHoursAsync(
-				organizationId,
-				startDate.ToString("yyyy-MM-dd", CultureInfo.InvariantCulture),
-				endDate.ToString("yyyy-MM-dd", CultureInfo.InvariantCulture),
-				CancellationToken);
+			.GetWeeklyHistoryAsync(organizationId, CancellationToken);
 
-		hoursResult.Should().NotBeNull();
+		result.Should().NotBeNull();
+	}
 
-		var projectResult = await SolidtimeClient
+	/// <summary>
+	/// Tests that weekly history chart data has valid structure
+	/// </summary>
+	[Fact]
+	public async Task Charts_WeeklyHistory_HasValidStructure()
+	{
+		var organizationId = await GetOrganizationIdAsync();
+
+		var result = await SolidtimeClient
 			.Charts
-			.GetWeeklyProjectOverviewAsync(
-				organizationId,
-				startDate.ToString("yyyy-MM-dd", CultureInfo.InvariantCulture),
-				endDate.ToString("yyyy-MM-dd", CultureInfo.InvariantCulture),
-				CancellationToken);
+			.GetWeeklyHistoryAsync(organizationId, CancellationToken);
 
-		projectResult.Should().NotBeNull();
+		result.Should().NotBeNull();
+
+		// If there is data, verify all required fields are present
+		if (result.Count > 0)
+		{
+			foreach (var dataPoint in result)
+			{
+				dataPoint.Date.Should().NotBeNullOrWhiteSpace();
+				dataPoint.Duration.Should().BeGreaterThanOrEqualTo(0);
+			}
+		}
+	}
+
+	/// <summary>
+	/// Tests that getting total weekly time succeeds
+	/// </summary>
+	[Fact]
+	public async Task Charts_GetTotalWeeklyTime_Succeeds()
+	{
+		var organizationId = await GetOrganizationIdAsync();
+
+		var result = await SolidtimeClient
+			.Charts
+			.GetTotalWeeklyTimeAsync(organizationId, CancellationToken);
+
+		// Result is total seconds, should be 0 or greater
+		result.Should().BeGreaterThanOrEqualTo(0);
+	}
+
+	/// <summary>
+	/// Tests that getting total weekly billable time succeeds
+	/// </summary>
+	[Fact]
+	public async Task Charts_GetTotalWeeklyBillableTime_Succeeds()
+	{
+		var organizationId = await GetOrganizationIdAsync();
+
+		var result = await SolidtimeClient
+			.Charts
+			.GetTotalWeeklyBillableTimeAsync(organizationId, CancellationToken);
+
+		// Result is total billable seconds, should be 0 or greater
+		result.Should().BeGreaterThanOrEqualTo(0);
+	}
+
+	/// <summary>
+	/// Tests that getting daily tracked hours succeeds
+	/// </summary>
+	[Fact]
+	public async Task Charts_GetDailyTrackedHours_Succeeds()
+	{
+		var organizationId = await GetOrganizationIdAsync();
+
+		var result = await SolidtimeClient
+			.Charts
+			.GetDailyTrackedHoursAsync(organizationId, CancellationToken);
+
+		result.Should().NotBeNull();
+	}
+
+	/// <summary>
+	/// Tests that daily tracked hours data has valid structure
+	/// </summary>
+	[Fact]
+	public async Task Charts_DailyTrackedHours_HasValidStructure()
+	{
+		var organizationId = await GetOrganizationIdAsync();
+
+		var result = await SolidtimeClient
+			.Charts
+			.GetDailyTrackedHoursAsync(organizationId, CancellationToken);
+
+		result.Should().NotBeNull();
+
+		// If there is data, verify all required fields are present
+		if (result.Count > 0)
+		{
+			foreach (var dataPoint in result)
+			{
+				dataPoint.Date.Should().NotBeNullOrWhiteSpace();
+				dataPoint.Duration.Should().BeGreaterThanOrEqualTo(0);
+			}
+		}
+	}
+
+	/// <summary>
+	/// Tests that getting last seven days chart succeeds
+	/// </summary>
+	[Fact]
+	public async Task Charts_GetLastSevenDays_Succeeds()
+	{
+		var organizationId = await GetOrganizationIdAsync();
+
+		var result = await SolidtimeClient
+			.Charts
+			.GetLastSevenDaysAsync(organizationId, CancellationToken);
+
+		result.Should().NotBeNull();
+	}
+
+	/// <summary>
+	/// Tests that last seven days data has valid structure
+	/// </summary>
+	[Fact]
+	public async Task Charts_LastSevenDays_HasValidStructure()
+	{
+		var organizationId = await GetOrganizationIdAsync();
+
+		var result = await SolidtimeClient
+			.Charts
+			.GetLastSevenDaysAsync(organizationId, CancellationToken);
+
+		result.Should().NotBeNull();
+
+		// If there is data, verify all required fields are present
+		if (result.Count > 0)
+		{
+			foreach (var dataPoint in result)
+			{
+				dataPoint.Date.Should().NotBeNullOrWhiteSpace();
+				dataPoint.Duration.Should().BeGreaterThanOrEqualTo(0);
+				dataPoint.History.Should().NotBeNull();
+			}
+		}
 	}
 }

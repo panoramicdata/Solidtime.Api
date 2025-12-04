@@ -12,7 +12,7 @@ public class TestDataManager(SolidtimeClient client, string organizationId, ILog
 
 	/// <summary>
 	/// Sets up test data before test run
-	/// Creates a sample client, tag, and project for tests to use
+	/// Creates a sample client, tag, project, and time entries for tests to use
 	/// </summary>
 	public async Task SetupTestDataAsync(CancellationToken cancellationToken)
 	{
@@ -57,12 +57,72 @@ public class TestDataManager(SolidtimeClient client, string organizationId, ILog
 			SampleTagId = tagResult.Data.Id;
 			logger.LogInformation("Created sample tag: {TagId}", SampleTagId);
 
+			// Create sample time entries for chart tests
+			// Create entries over the last 4 weeks to ensure charts have data
+			await CreateSampleTimeEntriesAsync(cancellationToken);
+
 			logger.LogInformation("Test data setup completed successfully");
 		}
 		catch (Exception ex)
 		{
 			logger.LogError(ex, "Failed to setup test data");
 			throw;
+		}
+	}
+
+	/// <summary>
+	/// Creates sample time entries for testing charts and reports
+	/// Creates entries spread over the last 4 weeks
+	/// </summary>
+	private async Task CreateSampleTimeEntriesAsync(CancellationToken cancellationToken)
+	{
+		try
+		{
+			// Get the current user's member ID
+			var members = await _client.Members.GetAsync(organizationId, null, null, cancellationToken);
+			if (members.Data.Count == 0)
+			{
+				logger.LogWarning("No members found in organization - cannot create sample time entries");
+				return;
+			}
+
+			var memberId = members.Data.First().Id;
+
+			var now = DateTimeOffset.UtcNow;
+
+			// Create 4 time entries spread over the last 4 weeks
+			for (var weekOffset = 0; weekOffset < 4; weekOffset++)
+			{
+				var entryDate = now.AddDays(-7 * weekOffset);
+				var startTime = new DateTimeOffset(
+					entryDate.Year,
+					entryDate.Month,
+					entryDate.Day,
+					9, 0, 0,
+					TimeSpan.Zero);
+				var endTime = startTime.AddHours(2); // 2-hour time entry
+
+				var timeEntryRequest = new TimeEntryStoreRequest
+				{
+					MemberId = memberId,
+					Start = startTime.ToString("yyyy-MM-ddTHH:mm:ssZ", System.Globalization.CultureInfo.InvariantCulture),
+					End = endTime.ToString("yyyy-MM-ddTHH:mm:ssZ", System.Globalization.CultureInfo.InvariantCulture),
+					Description = $"Test time entry for week {weekOffset + 1}",
+					ProjectId = SampleProjectId,
+					Tags = SampleTagId != null ? [SampleTagId] : null,
+					Billable = false
+				};
+
+				await _client.TimeEntries.CreateAsync(organizationId, timeEntryRequest, cancellationToken);
+				logger.LogDebug("Created sample time entry for {Date}", startTime);
+			}
+
+			logger.LogInformation("Created {Count} sample time entries", 4);
+		}
+		catch (Exception ex)
+		{
+			logger.LogWarning(ex, "Failed to create sample time entries - charts may not have data");
+			// Don't fail the setup - charts are optional
 		}
 	}
 

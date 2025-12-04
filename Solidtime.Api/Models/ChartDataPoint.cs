@@ -2,18 +2,19 @@ namespace Solidtime.Api.Models;
 
 /// <summary>
 /// Represents a chart data point from the Solidtime charts API
+/// Used by weekly-project-overview endpoint
 /// </summary>
 public class ChartDataPoint
 {
 	/// <summary>
-	/// The value of this data point (e.g., total hours, amount)
+	/// The value of this data point (duration in seconds)
 	/// </summary>
 	[JsonPropertyName("value")]
-	public required decimal Value { get; set; }
+	public required int Value { get; set; }
 
 	/// <summary>
-	/// The ID of the related entity (e.g., project ID, task ID)
-	/// May be null for aggregated data like "No project"
+	/// The ID of the related entity (e.g., project ID)
+	/// Note: This field is not documented in OpenAPI but is returned by the API
 	/// </summary>
 	[JsonPropertyName("id")]
 	public string? Id { get; set; }

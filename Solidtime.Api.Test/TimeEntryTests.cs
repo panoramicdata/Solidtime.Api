@@ -178,29 +178,32 @@ public class TimeEntryTests(ITestOutputHelper testOutputHelper, Fixture fixture)
 	}
 
 	/// <summary>
-	/// Tests that pagination works correctly
+	/// Tests that limit/offset pagination works correctly
 	/// </summary>
+	/// <remarks>
+	/// Note: The time-entries endpoint uses limit/offset pagination instead of page/perPage.
+	/// The API returns total count in meta but does not populate CurrentPage/LastPage fields
+	/// because those are concepts for page-based pagination.
+	/// </remarks>
 	[Fact]
 	public async Task TimeEntries_Pagination_Works()
 	{
 		var organizationId = await GetOrganizationIdAsync();
 
+		// Use limit=5, offset=0 to get the first 5 entries
 		var result = await SolidtimeClient
 			.TimeEntries
-			.GetAsync(organizationId, 1, 5, CancellationToken);
+			.GetAsync(organizationId, limit: 5, offset: 0, CancellationToken);
 
 		result.Should().NotBeNull();
 		result.Meta.Should().NotBeNull();
-		
-		// Note: The Solidtime API only populates pagination metadata when there is data
-		// If there are no time entries, CurrentPage and other fields will be null
-		if (result.Data.Count > 0 || result.Meta!.CurrentPage.HasValue)
-		{
-			result.Meta!.CurrentPage.Should().Be(1);
-		}
-		
-		// Note: API may ignore perPage parameter and use its own default
 		result.Data.Should().NotBeNull();
+
+		// Verify the total count is populated
+		result.Meta!.Total.Should().BeGreaterThanOrEqualTo(0);
+
+		// Verify the limit was respected (should return at most 5 entries)
+		result.Data.Count.Should().BeLessThanOrEqualTo(5);
 	}
 
 	/// <summary>
@@ -218,12 +221,9 @@ public class TimeEntryTests(ITestOutputHelper testOutputHelper, Fixture fixture)
 		if (result.Data.Count != 0)
 		{
 			var timeEntry = result.Data.First();
-			timeEntry.CreatedAt.Should().NotBeNull();
-			timeEntry.CreatedAt!.Value.Should().BeBefore(DateTimeOffset.UtcNow);
-			timeEntry.UpdatedAt.Should().NotBeNull();
-			timeEntry.UpdatedAt!.Value.Should().BeBefore(DateTimeOffset.UtcNow);
-			timeEntry.UpdatedAt.Value.Should().BeOnOrAfter(timeEntry.CreatedAt.Value);
-			timeEntry.Start.Should().BeBefore(DateTimeOffset.UtcNow);
+			// Note: TimeEntryResource does not include created_at or updated_at according to the Solidtime API spec.
+			// Only the Start timestamp is available for time entries.
+			timeEntry.Start.Should().BeBefore(DateTimeOffset.UtcNow.AddMinutes(1)); // Allow small clock drift
 		}
 	}
 }
