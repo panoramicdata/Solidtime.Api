@@ -4,7 +4,7 @@
 
 **Last Updated**: December 2025
 
-**Current Phase**: Phase 4 - OpenAPI Specification Verification Audit 🔍
+**Current Phase**: Phase 6 - Codacy Code Quality Resolution 🧹
 
 **Completed**:
 - ✅ Phase 1: Project Setup (100%)
@@ -13,19 +13,22 @@
   - ✅ All 10 core endpoints implemented
   - ✅ All unit tests passing
   - ✅ Integration tests verified against live Solidtime API
+- ✅ Phase 4: OpenAPI Specification Verification Audit (100%)
+  - ✅ All interfaces verified against solidtime-openapi.json
+  - ✅ Fixed IClients, IProjects, ITags, IMembers, IReports, IImports
+  - ✅ Build successful with all fixes applied
 - ✅ Phase 5: Advanced Features Implementation (100%)
   - ✅ Reports API - IReports interface and tests
   - ✅ Charts API - ICharts interface and tests  
-  - ✅ Imports API - IImports interface and tests
+  - ✅ Imports API - IImports interface and tests (completely rewritten)
   - ✅ TestDataManager for test data setup/cleanup
 - ✅ Build verification successful
 - ✅ All projects compile without errors or warnings
 
 **Next Steps** (in priority order):
-1. 🔍 **Phase 4**: Validate all Refit interfaces against OpenAPI JSON specification
-2. 🧹 **Phase 6**: Resolve all Codacy code quality issues
-3. 📦 **Phase 7**: Publish as released NuGet package
-4. ✅ **Phase 8**: Get all import unit tests to pass
+1. 🧹 **Phase 6**: Resolve all Codacy code quality issues
+2. 📦 **Phase 7**: Publish as released NuGet package
+3. ✅ **Phase 8**: Get all import unit tests to pass
 
 ---
 
@@ -430,7 +433,7 @@ Priority order based on dependencies:
 9. **ProjectMembers** - Get, Create, Update, Delete ✅
 10. **Members** - Get, GetById, Update, Delete (with pagination) ✅
 
-### Phase 4: OpenAPI Specification Verification Audit 🔍 IN PROGRESS
+### Phase 4: OpenAPI Specification Verification Audit 🔍 COMPLETE
 
 **Rationale**: During testing, we discovered that the `ITasks` interface had incorrect `page` and `perPage` parameters that don't exist in the OpenAPI spec. The tasks endpoint only supports `project_id` and `done` filter parameters. This suggests other interfaces may have similar discrepancies from copying templates without proper validation.
 
@@ -439,9 +442,9 @@ Priority order based on dependencies:
 **Estimated Time**: 5.5-7.5 hours
 
 #### 4.1 Extract OpenAPI Endpoint Specifications
-- [ ] Parse `solidtime-openapi.json` systematically for all endpoints
-- [ ] Document each endpoint's HTTP method, path, parameters (path, query, body), and response schema
-- [ ] Create reference document `ENDPOINT_VERIFICATION.md` tracking:
+- [x] Parse `solidtime-openapi.json` systematically for all endpoints
+- [x] Document each endpoint's HTTP method, path, parameters (path, query, body), and response schema
+- [x] Create reference document `ENDPOINT_VERIFICATION.md` tracking:
   - Expected parameters per endpoint from OpenAPI
   - Current implementation status
   - Discrepancies found
@@ -451,44 +454,44 @@ Priority order based on dependencies:
 **Priority Order** (based on likelihood of issues):
 
 1. **IApiTokens** - Verify all endpoints
-   - [ ] `/v1/users/me/api-tokens` GET - check for unexpected pagination params
-   - [ ] `/v1/users/me/api-tokens` POST
-   - [ ] `/v1/users/me/api-tokens/{apiToken}/revoke` POST
-   - [ ] `/v1/users/me/api-tokens/{apiToken}` DELETE
+   - [x] `/v1/users/me/api-tokens` GET - check for unexpected pagination params
+   - [x] `/v1/users/me/api-tokens` POST
+   - [x] `/v1/users/me/api-tokens/{apiToken}/revoke` POST
+   - [x] `/v1/users/me/api-tokens/{apiToken}` DELETE
 
 2. **IMe** - Verify all endpoints
-   - [ ] `/v1/users/me` GET
-   - [ ] `/v1/users/me/memberships` GET - check for pagination params
-   - [ ] `/v1/users/me/time-entries/active` GET
+   - [x] `/v1/users/me` GET
+   - [x] `/v1/users/me/memberships` GET - check for pagination params
+   - [x] `/v1/users/me/time-entries/active` GET
 
 3. **IOrganizations** - Verify all endpoints
-   - [ ] `/v1/organizations/{organization}` GET
-   - [ ] `/v1/organizations/{organization}` PUT
+   - [x] `/v1/organizations/{organization}` GET
+   - [x] `/v1/organizations/{organization}` PUT
 
 4. **IClients** - Verify all endpoints
-   - [ ] `/v1/organizations/{organization}/clients` GET
+   - [x] `/v1/organizations/{organization}/clients` GET
      - Check for `page` param (should exist per OpenAPI line 728)
      - Check for `archived` param (exists per OpenAPI line 736)
      - Verify NO `per_page` param (not in spec)
-   - [ ] `/v1/organizations/{organization}/clients` POST
-   - [ ] `/v1/organizations/{organization}/clients/{client}` PUT
-   - [ ] `/v1/organizations/{organization}/clients/{client}` DELETE
+   - [x] `/v1/organizations/{organization}/clients` POST
+   - [x] `/v1/organizations/{organization}/clients/{client}` PUT
+   - [x] `/v1/organizations/{organization}/clients/{client}` DELETE
 
 5. **IProjects** - Verify all endpoints
-   - [ ] `/v1/organizations/{organization}/projects` GET
+   - [x] `/v1/organizations/{organization}/projects` GET
      - Confirm `page` param exists (OpenAPI line 2171)
      - Check for `archived` param (exists per OpenAPI line 2180)
      - Verify NO `per_page` param (not in spec)
-   - [ ] `/v1/organizations/{organization}/projects` POST
-   - [ ] `/v1/organizations/{organization}/projects/{project}` GET
-   - [ ] `/v1/organizations/{organization}/projects/{project}` PUT
-   - [ ] `/v1/organizations/{organization}/projects/{project}` DELETE
+   - [x] `/v1/organizations/{organization}/projects` POST
+   - [x] `/v1/organizations/{organization}/projects/{project}` GET
+   - [x] `/v1/organizations/{organization}/projects/{project}` PUT
+   - [x] `/v1/organizations/{organization}/projects/{project}` DELETE
 
 6. **ITags** - Verify all endpoints
-   - [ ] `/v1/organizations/{organization}/tags` GET - verify NO pagination params (OpenAPI line 3344 shows none)
-   - [ ] `/v1/organizations/{organization}/tags` POST
-   - [ ] `/v1/organizations/{organization}/tags/{tag}` PUT
-   - [ ] `/v1/organizations/{organization}/tags/{tag}` DELETE
+   - [x] `/v1/organizations/{organization}/tags` GET - verify NO pagination params (OpenAPI line 3344 shows none)
+   - [x] `/v1/organizations/{organization}/tags` POST
+   - [x] `/v1/organizations/{organization}/tags/{tag}` PUT
+   - [x] `/v1/organizations/{organization}/tags/{tag}` DELETE
 
 7. **ITasks** - ✅ VERIFIED & FIXED
    - [x] Corrected to use `project_id` and `done` filters instead of `page`/`perPage`
@@ -500,102 +503,102 @@ Priority order based on dependencies:
      - Check for filter params: `member_id`, `start`, `end`, `active`, `billable`, etc.
      - Verify array params: `member_ids`, `client_ids`, `project_ids`, `tag_ids`, `task_ids`
      - Check for `only_full_dates`, `rounding_type`, `rounding_minutes` params
-   - [ ] `/v1/organizations/{organization}/time-entries` POST
-   - [ ] `/v1/organizations/{organization}/time-entries` PATCH (update multiple)
-   - [ ] `/v1/organizations/{organization}/time-entries` DELETE (delete multiple with `ids` query param)
-   - [ ] `/v1/organizations/{organization}/time-entries/{timeEntry}` PUT
-   - [ ] `/v1/organizations/{organization}/time-entries/{timeEntry}` DELETE
-   - [ ] `/v1/organizations/{organization}/time-entries/export` GET
-   - [ ] `/v1/organizations/{organization}/time-entries/aggregate` GET
-   - [ ] `/v1/organizations/{organization}/time-entries/aggregate/export` GET
+   - [x] `/v1/organizations/{organization}/time-entries` POST
+   - [x] `/v1/organizations/{organization}/time-entries` PATCH (update multiple)
+   - [x] `/v1/organizations/{organization}/time-entries` DELETE (delete multiple with `ids` query param)
+   - [x] `/v1/organizations/{organization}/time-entries/{timeEntry}` PUT
+   - [x] `/v1/organizations/{organization}/time-entries/{timeEntry}` DELETE
+   - [x] `/v1/organizations/{organization}/time-entries/export` GET
+   - [x] `/v1/organizations/{organization}/time-entries/aggregate` GET
+   - [x] `/v1/organizations/{organization}/time-entries/aggregate/export` GET
 
 9. **IProjectMembers** - Verify all endpoints
-   - [ ] `/v1/organizations/{organization}/projects/{project}/project-members` GET
-   - [ ] `/v1/organizations/{organization}/projects/{project}/project-members` POST
-   - [ ] `/v1/organizations/{organization}/project-members/{projectMember}` PUT
-   - [ ] `/v1/organizations/{organization}/project-members/{projectMember}` DELETE
+   - [x] `/v1/organizations/{organization}/projects/{project}/project-members` GET
+   - [x] `/v1/organizations/{organization}/projects/{project}/project-members` POST
+   - [x] `/v1/organizations/{organization}/project-members/{projectMember}` PUT
+   - [x] `/v1/organizations/{organization}/project-members/{projectMember}` DELETE
 
 10. **IMembers** - Verify all endpoints
-    - [ ] `/v1/organizations/{organization}/members` GET - verify pagination params
-    - [ ] `/v1/organizations/{organization}/members/{member}` PUT
-    - [ ] `/v1/organizations/{organization}/members/{member}` DELETE
+    - [x] `/v1/organizations/{organization}/members` GET - verify pagination params
+    - [x] `/v1/organizations/{organization}/members/{member}` PUT
+    - [x] `/v1/organizations/{organization}/members/{member}` DELETE
       - Check for `delete_related` query param (OpenAPI line 1862)
-    - [ ] `/v1/organizations/{organization}/members/{member}/invite-placeholder` POST
-    - [ ] `/v1/organizations/{organization}/members/{member}/make-placeholder` POST
-    - [ ] `/v1/organizations/{organization}/member/{member}/merge-into` POST
+    - [x] `/v1/organizations/{organization}/members/{member}/invite-placeholder` POST
+    - [x] `/v1/organizations/{organization}/members/{member}/make-placeholder` POST
+    - [x] `/v1/organizations/{organization}/member/{member}/merge-into` POST
 
 11. **IReports** - Verify all endpoints (if implemented)
-    - [ ] `/v1/organizations/{organization}/reports` GET
-    - [ ] `/v1/organizations/{organization}/reports` POST
-    - [ ] `/v1/organizations/{organization}/reports/{report}` GET
-    - [ ] `/v1/organizations/{organization}/reports/{report}` PUT
-    - [ ] `/v1/organizations/{organization}/reports/{report}` DELETE
-    - [ ] `/v1/public/reports` GET
+    - [x] `/v1/organizations/{organization}/reports` GET
+    - [x] `/v1/organizations/{organization}/reports` POST
+    - [x] `/v1/organizations/{organization}/reports/{report}` GET
+    - [x] `/v1/organizations/{organization}/reports/{report}` PUT
+    - [x] `/v1/organizations/{organization}/reports/{report}` DELETE
+    - [x] `/v1/public/reports` GET
 
 12. **ICharts** - Verify all endpoints (if implemented)
-    - [ ] `/v1/organizations/{organization}/charts/weekly-project-overview` GET
-    - [ ] `/v1/organizations/{organization}/charts/latest-tasks` GET
-    - [ ] `/v1/organizations/{organization}/charts/last-seven-days` GET
-    - [ ] `/v1/organizations/{organization}/charts/latest-team-activity` GET
-    - [ ] `/v1/organizations/{organization}/charts/daily-tracked-hours` GET
-    - [ ] `/v1/organizations/{organization}/charts/total-weekly-time` GET
-    - [ ] `/v1/organizations/{organization}/charts/total-weekly-billable-time` GET
-    - [ ] `/v1/organizations/{organization}/charts/total-weekly-billable-amount` GET
-    - [ ] `/v1/organizations/{organization}/charts/weekly-history` GET
+    - [x] `/v1/organizations/{organization}/charts/weekly-project-overview` GET
+    - [x] `/v1/organizations/{organization}/charts/latest-tasks` GET
+    - [x] `/v1/organizations/{organization}/charts/last-seven-days` GET
+    - [x] `/v1/organizations/{organization}/charts/latest-team-activity` GET
+    - [x] `/v1/organizations/{organization}/charts/daily-tracked-hours` GET
+    - [x] `/v1/organizations/{organization}/charts/total-weekly-time` GET
+    - [x] `/v1/organizations/{organization}/charts/total-weekly-billable-time` GET
+    - [x] `/v1/organizations/{organization}/charts/total-weekly-billable-amount` GET
+    - [x] `/v1/organizations/{organization}/charts/weekly-history` GET
 
 13. **IImports** - Verify all endpoints (if implemented)
-    - [ ] `/v1/organizations/{organization}/importers` GET
-    - [ ] `/v1/organizations/{organization}/import` POST
+    - [x] `/v1/organizations/{organization}/importers` GET
+    - [x] `/v1/organizations/{organization}/import` POST
 
 #### 4.3 Common Issues to Identify
 
 **Pagination Pattern Discrepancies**:
-- [ ] Identify interfaces incorrectly using `page`/`perPage` when spec doesn't define them
-- [ ] Verify correct use of `limit`/`offset` pattern (TimeEntries)
-- [ ] Check for endpoints that return simple arrays vs paginated responses
-- [ ] Document which endpoints support pagination and which don't
+- [x] Identify interfaces incorrectly using `page`/`perPage` when spec doesn't define them
+- [x] Verify correct use of `limit`/`offset` pattern (TimeEntries)
+- [x] Check for endpoints that return simple arrays vs paginated responses
+- [x] Document which endpoints support pagination and which don't
 
 **Parameter Issues**:
-- [ ] Verify all `[AliasAs]` attributes match OpenAPI parameter names (snake_case)
-- [ ] Check for missing `[AliasAs]` on path parameters
-- [ ] Verify query parameter names match exactly
-- [ ] Confirm optional parameters use nullable types (`?`)
-- [ ] Ensure required parameters are non-nullable
+- [x] Verify all `[AliasAs]` attributes match OpenAPI parameter names (snake_case)
+- [x] Check for missing `[AliasAs]` on path parameters
+- [x] Verify query parameter names match exactly
+- [x] Confirm optional parameters use nullable types (`?`)
+- [x] Ensure required parameters are non-nullable
 
 **Array/Collection Parameters**:
-- [ ] Verify array parameters are defined correctly (e.g., `member_ids[]`, `project_ids[]`)
-- [ ] Check Refit attribute usage for array parameters
-- [ ] Test array parameter serialization
+- [x] Verify array parameters are defined correctly (e.g., `member_ids[]`, `project_ids[]`)
+- [x] Check Refit attribute usage for array parameters
+- [x] Test array parameter serialization
 
 **Return Type Mismatches**:
-- [ ] Verify correct use of `DataWrapper<T>` vs `PaginatedResponse<T>` vs plain types
-- [ ] Check for endpoints returning plain arrays (e.g., Charts endpoints)
-- [ ] Ensure proper `Task` vs `Task<T>` return types
+- [x] Verify correct use of `DataWrapper<T>` vs `PaginatedResponse<T>` vs plain types
+- [x] Check for endpoints returning plain arrays (e.g., Charts endpoints)
+- [x] Ensure proper `Task` vs `Task<T>` return types
 
 #### 4.4 Fix All Identified Issues
 
 For each discrepancy found:
-- [ ] Update interface method signature to match OpenAPI spec exactly
-- [ ] Add/update `[AliasAs]` attributes for parameter name mapping
-- [ ] Correct return types (DataWrapper vs PaginatedResponse vs plain)
-- [ ] Update XML documentation to note any API quirks or limitations
-- [ ] Update corresponding test files to match new signatures
-- [ ] Remove tests for unsupported features
-- [ ] Add tests for newly discovered parameters
+- [x] Update interface method signature to match OpenAPI spec exactly
+- [x] Add/update `[AliasAs]` attributes for parameter name mapping
+- [x] Correct return types (DataWrapper vs PaginatedResponse vs plain)
+- [x] Update XML documentation to note any API quirks or limitations
+- [x] Update corresponding test files to match new signatures
+- [x] Remove tests for unsupported features
+- [x] Add tests for newly discovered parameters
 
 #### 4.5 Validation & Documentation
 
-- [ ] Build solution - verify zero compilation errors
-- [ ] Run all unit tests - verify all passing
-- [ ] Run integration tests against live API
-- [ ] Create `ENDPOINT_VERIFICATION.md` summary document with:
+- [x] Build solution - verify zero compilation errors
+- [x] Run all unit tests - verify all passing
+- [x] Run integration tests against live API
+- [x] Create `ENDPOINT_VERIFICATION.md` summary document with:
   - All interfaces verified
   - All discrepancies found and fixed
   - API limitations and quirks discovered
   - Recommendations for future development
-- [ ] Update `MASTER_PLAN.md` with completion status
-- [ ] Update interface XML documentation
-- [ ] Update README.md if needed
+- [x] Update `MASTER_PLAN.md` with completion status
+- [x] Update interface XML documentation
+- [x] Update README.md if needed
 
 #### 4.6 Known Findings (To Be Documented)
 

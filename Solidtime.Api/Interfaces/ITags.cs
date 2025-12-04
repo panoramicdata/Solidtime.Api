@@ -4,9 +4,7 @@ namespace Solidtime.Api.Interfaces;
 /// Interface for managing tags
 /// </summary>
 /// <remarks>
-/// NOTE: The Solidtime API has limited support for tag operations.
-/// Only List, Create, and Delete operations are currently supported.
-/// Get by ID and Update operations return 404/405 errors.
+/// NOTE: The Solidtime API returns all tags in a single request - no pagination is supported.
 /// </remarks>
 public interface ITags
 {
@@ -14,15 +12,14 @@ public interface ITags
 	/// Gets all tags in an organization
 	/// </summary>
 	/// <param name="organizationId">The organization ID</param>
-	/// <param name="page">Page number for pagination (optional)</param>
-	/// <param name="perPage">Number of items per page (optional)</param>
 	/// <param name="cancellationToken">Cancellation token</param>
-	/// <returns>A paginated list of tags</returns>
+	/// <returns>A list of tags wrapped in a data wrapper</returns>
+	/// <remarks>
+	/// Note: This endpoint does not support pagination. All tags are returned in a single request.
+	/// </remarks>
 	[Get("/v1/organizations/{organization}/tags")]
-	Task<PaginatedResponse<Tag>> GetAsync(
+	Task<DataWrapper<List<Tag>>> GetAsync(
 		[AliasAs("organization")] string organizationId,
-		[Query] int? page,
-		[Query, AliasAs("per_page")] int? perPage,
 		CancellationToken cancellationToken);
 
 	/// <summary>
@@ -36,6 +33,21 @@ public interface ITags
 	Task<DataWrapper<Tag>> CreateAsync(
 		[AliasAs("organization")] string organizationId,
 		[Body] TagStoreRequest request,
+		CancellationToken cancellationToken);
+
+	/// <summary>
+	/// Updates a tag
+	/// </summary>
+	/// <param name="organizationId">The organization ID</param>
+	/// <param name="tagId">The tag ID</param>
+	/// <param name="request">The tag update request</param>
+	/// <param name="cancellationToken">Cancellation token</param>
+	/// <returns>The updated tag</returns>
+	[Put("/v1/organizations/{organization}/tags/{tag}")]
+	Task<DataWrapper<Tag>> UpdateAsync(
+		[AliasAs("organization")] string organizationId,
+		[AliasAs("tag")] string tagId,
+		[Body] TagUpdateRequest request,
 		CancellationToken cancellationToken);
 
 	/// <summary>

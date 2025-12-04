@@ -16,7 +16,7 @@ public class ReportTests(ITestOutputHelper testOutputHelper, Fixture fixture)
 
 		var result = await SolidtimeClient
 			.Reports
-			.GetAsync(organizationId, null, null, CancellationToken);
+			.GetAsync(organizationId, CancellationToken);
 
 		result.Should().NotBeNull();
 		result.Data.Should().NotBeNull();
@@ -98,7 +98,7 @@ public class ReportTests(ITestOutputHelper testOutputHelper, Fixture fixture)
 			// Verify deletion by checking it doesn't appear in the list
 			var allReports = await SolidtimeClient
 				.Reports
-				.GetAsync(organizationId, null, null, CancellationToken);
+				.GetAsync(organizationId, CancellationToken);
 
 			allReports.Data.Should().NotContain(r => r.Id == reportId);
 		}
@@ -122,24 +122,24 @@ public class ReportTests(ITestOutputHelper testOutputHelper, Fixture fixture)
 	}
 
 	/// <summary>
-	/// Tests that pagination works correctly
+	/// Tests that the paginated response contains proper metadata
 	/// </summary>
 	[Fact]
-	public async Task Reports_Pagination_Works()
+	public async Task Reports_Get_HasPaginationMetadata()
 	{
 		var organizationId = await GetOrganizationIdAsync();
 
 		var result = await SolidtimeClient
 			.Reports
-			.GetAsync(organizationId, 1, 5, CancellationToken);
+			.GetAsync(organizationId, CancellationToken);
 
 		result.Should().NotBeNull();
 		result.Meta.Should().NotBeNull();
 
-		// The Solidtime API only populates pagination metadata when there is data
-		if (result.Data.Count > 0 || result.Meta!.CurrentPage.HasValue)
+		// The Solidtime API returns paginated response but doesn't accept pagination params
+		if (result.Data.Count > 0)
 		{
-			result.Meta!.CurrentPage.Should().Be(1);
+			result.Meta!.Total.Should().BeGreaterThanOrEqualTo(result.Data.Count);
 		}
 
 		result.Data.Should().NotBeNull();

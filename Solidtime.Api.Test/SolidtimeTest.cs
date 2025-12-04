@@ -188,7 +188,7 @@ public class SolidtimeTest : TestBed<Fixture>
 
 		// Otherwise, fetch from API
 		var organizationId = await GetOrganizationIdAsync();
-		var tags = await SolidtimeClient.Tags.GetAsync(organizationId, null, null, CancellationToken);
+		var tags = await SolidtimeClient.Tags.GetAsync(organizationId, CancellationToken);
 		
 		if (tags.Data.Count == 0)
 		{
@@ -206,7 +206,7 @@ public class SolidtimeTest : TestBed<Fixture>
 	protected async Task<string> GetMemberIdAsync()
 	{
 		var organizationId = await GetOrganizationIdAsync();
-		var members = await SolidtimeClient.Members.GetAsync(organizationId, null, null, CancellationToken);
+		var members = await SolidtimeClient.Members.GetAsync(organizationId, CancellationToken);
 		
 		if (members.Data.Count == 0)
 		{

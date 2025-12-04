@@ -16,7 +16,7 @@ public class MemberTests(ITestOutputHelper testOutputHelper, Fixture fixture)
 
 		var result = await SolidtimeClient
 			.Members
-			.GetAsync(organizationId, null, null, CancellationToken);
+			.GetAsync(organizationId, CancellationToken);
 
 		result.Should().NotBeNull();
 		result.Data.Should().NotBeNull();
@@ -34,7 +34,7 @@ public class MemberTests(ITestOutputHelper testOutputHelper, Fixture fixture)
 
 		var result = await SolidtimeClient
 			.Members
-			.GetAsync(organizationId, null, null, CancellationToken);
+			.GetAsync(organizationId, CancellationToken);
 
 		if (result.Data.Count != 0)
 		{
@@ -48,28 +48,27 @@ public class MemberTests(ITestOutputHelper testOutputHelper, Fixture fixture)
 	}
 
 	/// <summary>
-	/// Tests that pagination works correctly
+	/// Tests that the paginated response contains proper metadata
 	/// </summary>
 	[Fact]
-	public async Task Members_Pagination_Works()
+	public async Task Members_Get_HasPaginationMetadata()
 	{
 		var organizationId = await GetOrganizationIdAsync();
 
 		var result = await SolidtimeClient
 			.Members
-			.GetAsync(organizationId, 1, 5, CancellationToken);
+			.GetAsync(organizationId, CancellationToken);
 
 		result.Should().NotBeNull();
 		result.Meta.Should().NotBeNull();
 		
-		// Note: The Solidtime API only populates pagination metadata when there is data
-		// If there are no members, CurrentPage and other fields will be null
-		if (result.Data.Count > 0 || result.Meta!.CurrentPage.HasValue)
+		// Note: The Solidtime API returns paginated response structure but 
+		// does not accept pagination query parameters
+		if (result.Data.Count > 0)
 		{
-			result.Meta!.CurrentPage.Should().Be(1);
+			result.Meta!.Total.Should().BeGreaterThanOrEqualTo(result.Data.Count);
 		}
 		
-		// Note: API may ignore perPage parameter and use its own default
 		result.Data.Should().NotBeNull();
 	}
 }

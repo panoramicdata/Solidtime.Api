@@ -10,14 +10,17 @@ public interface IClients
 	/// </summary>
 	/// <param name="organizationId">The organization ID</param>
 	/// <param name="page">Page number for pagination (optional)</param>
-	/// <param name="perPage">Number of items per page (optional)</param>
+	/// <param name="archived">Filter by archived status: "true", "false", or "all" (optional)</param>
 	/// <param name="cancellationToken">Cancellation token</param>
-	/// <returns>A paginated list of clients</returns>
+	/// <returns>A list of clients wrapped in a data wrapper</returns>
+	/// <remarks>
+	/// Note: The API does not support per_page parameter. Use page for pagination.
+	/// </remarks>
 	[Get("/v1/organizations/{organization}/clients")]
-	Task<PaginatedResponse<Client>> GetAsync(
+	Task<DataWrapper<List<Client>>> GetAsync(
 		[AliasAs("organization")] string organizationId,
 		[Query] int? page,
-		[Query, AliasAs("per_page")] int? perPage,
+		[Query] string? archived,
 		CancellationToken cancellationToken);
 
 	/// <summary>

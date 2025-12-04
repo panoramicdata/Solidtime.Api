@@ -142,9 +142,10 @@ public class ProjectTests(ITestOutputHelper testOutputHelper, Fixture fixture)
 	{
 		var organizationId = await GetOrganizationIdAsync();
 
+		// Request page 1 (perPage is not supported by the API)
 		var result = await SolidtimeClient
 			.Projects
-			.GetAsync(organizationId, 1, 5, CancellationToken);
+			.GetAsync(organizationId, 1, null, CancellationToken);
 
 		result.Should().NotBeNull();
 		result.Meta.Should().NotBeNull();
@@ -157,6 +158,31 @@ public class ProjectTests(ITestOutputHelper testOutputHelper, Fixture fixture)
 		}
 
 		result.Data.Should().NotBeNull();
+	}
+
+	/// <summary>
+	/// Tests that archived filter works correctly
+	/// </summary>
+	[Fact]
+	public async Task Projects_ArchivedFilter_Works()
+	{
+		var organizationId = await GetOrganizationIdAsync();
+
+		// Get non-archived projects (default)
+		var result = await SolidtimeClient
+			.Projects
+			.GetAsync(organizationId, null, null, CancellationToken);
+
+		result.Should().NotBeNull();
+		result.Data.Should().NotBeNull();
+
+		// Get all projects including archived
+		var allResult = await SolidtimeClient
+			.Projects
+			.GetAsync(organizationId, null, "all", CancellationToken);
+
+		allResult.Should().NotBeNull();
+		allResult.Data.Should().NotBeNull();
 	}
 
 	/// <summary>

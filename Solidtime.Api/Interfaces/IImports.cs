@@ -6,55 +6,26 @@ namespace Solidtime.Api.Interfaces;
 public interface IImports
 {
 	/// <summary>
-	/// Gets all imports for an organization
+	/// Gets information about available importers
 	/// </summary>
 	/// <param name="organizationId">The organization ID</param>
-	/// <param name="page">The page number (optional)</param>
-	/// <param name="perPage">The number of items per page (optional)</param>
 	/// <param name="cancellationToken">Cancellation token</param>
-	/// <returns>A paginated list of imports</returns>
-	[Get("/v1/organizations/{organization}/imports")]
-	Task<PaginatedResponse<Import>> GetAsync(
+	/// <returns>A list of available importers</returns>
+	[Get("/v1/organizations/{organization}/importers")]
+	Task<DataWrapper<List<Importer>>> GetImportersAsync(
 		[AliasAs("organization")] string organizationId,
-		[Query] int? page,
-		[Query("per_page")] int? perPage,
 		CancellationToken cancellationToken);
 
 	/// <summary>
-	/// Gets a specific import by ID
+	/// Imports data into the organization
 	/// </summary>
 	/// <param name="organizationId">The organization ID</param>
-	/// <param name="importId">The import ID</param>
+	/// <param name="request">The import request containing the type and base64 encoded data</param>
 	/// <param name="cancellationToken">Cancellation token</param>
-	/// <returns>The import</returns>
-	[Get("/v1/organizations/{organization}/imports/{import}")]
-	Task<DataWrapper<Import>> GetByIdAsync(
+	/// <returns>The import report with counts of created entities</returns>
+	[Post("/v1/organizations/{organization}/import")]
+	Task<ImportResponse> ImportDataAsync(
 		[AliasAs("organization")] string organizationId,
-		[AliasAs("import")] string importId,
-		CancellationToken cancellationToken);
-
-	/// <summary>
-	/// Creates a new import operation
-	/// </summary>
-	/// <param name="organizationId">The organization ID</param>
-	/// <param name="request">The import creation request</param>
-	/// <param name="cancellationToken">Cancellation token</param>
-	/// <returns>The created import</returns>
-	[Post("/v1/organizations/{organization}/imports")]
-	Task<DataWrapper<Import>> CreateAsync(
-		[AliasAs("organization")] string organizationId,
-		[Body] ImportStoreRequest request,
-		CancellationToken cancellationToken);
-
-	/// <summary>
-	/// Deletes an import
-	/// </summary>
-	/// <param name="organizationId">The organization ID</param>
-	/// <param name="importId">The import ID</param>
-	/// <param name="cancellationToken">Cancellation token</param>
-	[Delete("/v1/organizations/{organization}/imports/{import}")]
-	Task DeleteAsync(
-		[AliasAs("organization")] string organizationId,
-		[AliasAs("import")] string importId,
+		[Body] ImportRequest request,
 		CancellationToken cancellationToken);
 }

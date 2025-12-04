@@ -16,20 +16,17 @@ public class TagTests(ITestOutputHelper testOutputHelper, Fixture fixture)
 
 		var result = await SolidtimeClient
 			.Tags
-			.GetAsync(organizationId, null, null, CancellationToken);
+			.GetAsync(organizationId, CancellationToken);
 
 		result.Should().NotBeNull();
 		result.Data.Should().NotBeNull();
-		result.Meta.Should().NotBeNull();
-		// Links may be null when the result set is empty
 	}
 
 	/// <summary>
-	/// Tests that creating and deleting a tag succeeds
-	/// NOTE: Solidtime API does not support GET by ID or UPDATE operations for tags
+	/// Tests that creating, updating, and deleting a tag succeeds
 	/// </summary>
 	[Fact]
-	public async Task Tags_CreateDelete_Succeeds()
+	public async Task Tags_CreateUpdateDelete_Succeeds()
 	{
 		var organizationId = await GetOrganizationIdAsync();
 		string? tagId = null;
@@ -56,11 +53,24 @@ public class TagTests(ITestOutputHelper testOutputHelper, Fixture fixture)
 			// Verify creation by getting all tags and checking the new one is present
 			var allTagsAfterCreate = await SolidtimeClient
 				.Tags
-				.GetAsync(organizationId, null, null, CancellationToken);
+				.GetAsync(organizationId, CancellationToken);
 
 			allTagsAfterCreate.Data.Should().Contain(t => t.Id == tagId);
 			var createdTag = allTagsAfterCreate.Data.First(t => t.Id == tagId);
 			createdTag.Name.Should().Be(createRequest.Name);
+
+			// Update
+			var updateRequest = new TagUpdateRequest
+			{
+				Name = $"Updated Tag {Guid.NewGuid()}"
+			};
+
+			var updateResult = await SolidtimeClient
+				.Tags
+				.UpdateAsync(organizationId, tagId, updateRequest, CancellationToken);
+
+			updateResult.Should().NotBeNull();
+			updateResult.Data.Name.Should().Be(updateRequest.Name);
 
 			// Delete
 			await SolidtimeClient
@@ -70,7 +80,7 @@ public class TagTests(ITestOutputHelper testOutputHelper, Fixture fixture)
 			// Verify deletion by checking it doesn't appear in the list
 			var allTagsAfterDelete = await SolidtimeClient
 				.Tags
-				.GetAsync(organizationId, null, null, CancellationToken);
+				.GetAsync(organizationId, CancellationToken);
 
 			allTagsAfterDelete.Data.Should().NotContain(t => t.Id == tagId);
 		}
@@ -94,32 +104,6 @@ public class TagTests(ITestOutputHelper testOutputHelper, Fixture fixture)
 	}
 
 	/// <summary>
-	/// Tests that pagination works correctly
-	/// </summary>
-	[Fact]
-	public async Task Tags_Pagination_Works()
-	{
-		var organizationId = await GetOrganizationIdAsync();
-
-		var result = await SolidtimeClient
-			.Tags
-			.GetAsync(organizationId, 1, 5, CancellationToken);
-
-		result.Should().NotBeNull();
-		result.Meta.Should().NotBeNull();
-		
-		// Note: The Solidtime API only populates pagination metadata when there is data
-		// If there are no tags, CurrentPage and other fields will be null
-		if (result.Data.Count > 0 || result.Meta!.CurrentPage.HasValue)
-		{
-			result.Meta!.CurrentPage.Should().Be(1);
-		}
-		
-		// Note: API may ignore perPage parameter and use its own default
-		result.Data.Should().NotBeNull();
-	}
-
-	/// <summary>
 	/// Tests that tags have valid timestamps
 	/// </summary>
 	[Fact]
@@ -129,7 +113,7 @@ public class TagTests(ITestOutputHelper testOutputHelper, Fixture fixture)
 
 		var result = await SolidtimeClient
 			.Tags
-			.GetAsync(organizationId, null, null, CancellationToken);
+			.GetAsync(organizationId, CancellationToken);
 
 		if (result.Data.Count != 0)
 		{

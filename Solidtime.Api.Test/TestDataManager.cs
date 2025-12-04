@@ -79,7 +79,7 @@ public class TestDataManager(SolidtimeClient client, string organizationId, ILog
 		try
 		{
 			// Get the current user's member ID
-			var members = await _client.Members.GetAsync(organizationId, null, null, cancellationToken);
+			var members = await _client.Members.GetAsync(organizationId, cancellationToken);
 			if (members.Data.Count == 0)
 			{
 				logger.LogWarning("No members found in organization - cannot create sample time entries");
@@ -222,7 +222,7 @@ public class TestDataManager(SolidtimeClient client, string organizationId, ILog
 	{
 		try
 		{
-			var tags = await _client.Tags.GetAsync(organizationId, null, null, cancellationToken);
+			var tags = await _client.Tags.GetAsync(organizationId, cancellationToken);
 			foreach (var tag in tags.Data)
 			{
 				try

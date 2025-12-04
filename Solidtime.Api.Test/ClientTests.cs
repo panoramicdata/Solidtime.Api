@@ -20,8 +20,6 @@ public class ClientTests(ITestOutputHelper testOutputHelper, Fixture fixture)
 
 		result.Should().NotBeNull();
 		result.Data.Should().NotBeNull();
-		result.Meta.Should().NotBeNull();
-		// Links may be null when the result set is empty
 	}
 
 	/// <summary>
@@ -113,30 +111,28 @@ public class ClientTests(ITestOutputHelper testOutputHelper, Fixture fixture)
 	}
 
 	/// <summary>
-	/// Tests that pagination works correctly
+	/// Tests that archived filter works correctly
 	/// </summary>
 	[Fact]
-	public async Task Clients_Pagination_Works()
+	public async Task Clients_ArchivedFilter_Works()
 	{
 		var organizationId = await GetOrganizationIdAsync();
 
+		// Get all clients (default, non-archived)
 		var result = await SolidtimeClient
 			.Clients
-			.GetAsync(organizationId, 1, 5, CancellationToken);
+			.GetAsync(organizationId, 1, null, CancellationToken);
 
 		result.Should().NotBeNull();
-		result.Meta.Should().NotBeNull();
-		
-		// Note: The Solidtime API only populates pagination metadata when there is data
-		// If there are no clients, CurrentPage and other fields will be null
-		if (result.Data.Count > 0 || result.Meta!.CurrentPage.HasValue)
-		{
-			result.Meta!.CurrentPage.Should().Be(1);
-		}
-		
-		// Note: API may ignore perPage parameter and use its own default (e.g., 500)
-		// Just verify we got a valid result with meta information
 		result.Data.Should().NotBeNull();
+
+		// Get all clients including archived
+		var allResult = await SolidtimeClient
+			.Clients
+			.GetAsync(organizationId, 1, "all", CancellationToken);
+
+		allResult.Should().NotBeNull();
+		allResult.Data.Should().NotBeNull();
 	}
 
 	/// <summary>

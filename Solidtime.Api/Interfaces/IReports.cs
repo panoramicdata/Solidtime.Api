@@ -9,15 +9,14 @@ public interface IReports
 	/// Gets all reports for an organization
 	/// </summary>
 	/// <param name="organizationId">The organization ID</param>
-	/// <param name="page">The page number (optional)</param>
-	/// <param name="perPage">The number of items per page (optional)</param>
 	/// <param name="cancellationToken">Cancellation token</param>
 	/// <returns>A paginated list of reports</returns>
+	/// <remarks>
+	/// Note: The API returns paginated results but does not accept pagination query parameters.
+	/// </remarks>
 	[Get("/v1/organizations/{organization}/reports")]
 	Task<PaginatedResponse<Report>> GetAsync(
 		[AliasAs("organization")] string organizationId,
-		[Query] int? page,
-		[Query("per_page")] int? perPage,
 		CancellationToken cancellationToken);
 
 	/// <summary>
