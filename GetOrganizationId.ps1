@@ -129,7 +129,7 @@ try {
     Write-Output -InputObject "Once you have your Organization ID, configure it with:"
     Write-Output -InputObject ""
     Write-Output -InputObject "  cd Solidtime.Api.Test"
-    Write-Output -InputObject "  dotnet user-secrets set `"Configuration:SampleOrganizationId`" `"YOUR-ORG-ID`" ""
+    Write-Output -InputObject "  dotnet user-secrets set `"Configuration:SampleOrganizationId`" `"YOUR-ORG-ID`""
     Write-Output -InputObject ""
     
     Write-ColoredOutput "Then run the tests:" -Color Cyan
