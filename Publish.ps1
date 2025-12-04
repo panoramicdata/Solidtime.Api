@@ -51,46 +51,46 @@ $nugetSource = 'https://api.nuget.org/v3/index.json'
 # Helper functions
 function Write-Info {
     param([string]$Message)
-    Write-Host "??  $Message" -ForegroundColor Cyan
+    Write-Information "⏳  $Message" -InformationAction Continue
 }
 
 function Write-Success {
     param([string]$Message)
-    Write-Host "? $Message" -ForegroundColor Green
+    Write-Information "✓ $Message" -InformationAction Continue
 }
 
-function Write-Error {
+function Write-ErrorMessage {
     param([string]$Message)
-    Write-Host "? $Message" -ForegroundColor Red
+    Write-Error "✗ $Message"
 }
 
-function Write-Warning {
+function Write-WarningMessage {
     param([string]$Message)
-    Write-Host "??  $Message" -ForegroundColor Yellow
+    Write-Warning "⚠️  $Message"
 }
 
 # Banner
-Write-Host ""
-Write-Host "??????????????????????????????????????????????????????????" -ForegroundColor Cyan
-Write-Host "?       Solidtime.Api NuGet Package Publisher           ?" -ForegroundColor Cyan
-Write-Host "??????????????????????????????????????????????????????????" -ForegroundColor Cyan
-Write-Host ""
+Write-Information "" -InformationAction Continue
+Write-Information "═════════════════════════════════════════════" -InformationAction Continue
+Write-Information "█       Solidtime.Api NuGet Package Publisher           █" -InformationAction Continue
+Write-Information "═════════════════════════════════════════════" -InformationAction Continue
+Write-Information "" -InformationAction Continue
 
 # Validate NuGet key file exists
 Write-Info "Checking for NuGet API key..."
 if (-not (Test-Path $nugetKeyFile)) {
-    Write-Error "NuGet API key file not found: $nugetKeyFile"
-    Write-Host ""
-    Write-Host "Please create a file named 'nuget-key.txt' in the solution root containing your NuGet API key." -ForegroundColor Yellow
-    Write-Host "You can get your API key from: https://www.nuget.org/account/apikeys" -ForegroundColor Yellow
-    Write-Host ""
+    Write-ErrorMessage "NuGet API key file not found: $nugetKeyFile"
+    Write-Warning ""
+    Write-Warning "Please create a file named 'nuget-key.txt' in the solution root containing your NuGet API key."
+    Write-Warning "You can get your API key from: https://www.nuget.org/account/apikeys"
+    Write-Warning ""
     exit 1
 }
 
 # Read NuGet API key
 $nugetApiKey = (Get-Content $nugetKeyFile -Raw).Trim()
 if ([string]::IsNullOrWhiteSpace($nugetApiKey)) {
-    Write-Error "NuGet API key file is empty: $nugetKeyFile"
+    Write-ErrorMessage "NuGet API key file is empty: $nugetKeyFile"
     exit 1
 }
 Write-Success "NuGet API key loaded"
@@ -98,11 +98,11 @@ Write-Success "NuGet API key loaded"
 # Validate project files exist
 Write-Info "Validating project files..."
 if (-not (Test-Path $projectPath)) {
-    Write-Error "Project file not found: $projectPath"
+    Write-ErrorMessage "Project file not found: $projectPath"
     exit 1
 }
 if (-not (Test-Path $testProjectPath)) {
-    Write-Error "Test project file not found: $testProjectPath"
+    Write-ErrorMessage "Test project file not found: $testProjectPath"
     exit 1
 }
 Write-Success "Project files validated"
@@ -112,13 +112,13 @@ Write-Info "Cleaning previous builds..."
 try {
     dotnet clean $projectPath --configuration $Configuration --verbosity quiet
     if ($LASTEXITCODE -ne 0) {
-        Write-Error "Clean failed"
+        Write-ErrorMessage "Clean failed"
         exit 1
     }
     Write-Success "Clean completed"
 }
 catch {
-    Write-Error "Clean failed: $_"
+    Write-ErrorMessage "Clean failed: $_"
     exit 1
 }
 
@@ -127,13 +127,13 @@ Write-Info "Restoring NuGet packages..."
 try {
     dotnet restore $projectPath --verbosity quiet
     if ($LASTEXITCODE -ne 0) {
-        Write-Error "Restore failed"
+        Write-ErrorMessage "Restore failed"
         exit 1
     }
     Write-Success "Packages restored"
 }
 catch {
-    Write-Error "Restore failed: $_"
+    Write-ErrorMessage "Restore failed: $_"
     exit 1
 }
 
@@ -142,13 +142,13 @@ Write-Info "Building project ($Configuration configuration)..."
 try {
     dotnet build $projectPath --configuration $Configuration --no-restore --verbosity quiet
     if ($LASTEXITCODE -ne 0) {
-        Write-Error "Build failed"
+        Write-ErrorMessage "Build failed"
         exit 1
     }
     Write-Success "Build completed"
 }
 catch {
-    Write-Error "Build failed: $_"
+    Write-ErrorMessage "Build failed: $_"
     exit 1
 }
 
@@ -158,20 +158,20 @@ if (-not $SkipTests) {
     try {
         dotnet test $testProjectPath --configuration $Configuration --no-build --verbosity normal --logger "console;verbosity=normal"
         if ($LASTEXITCODE -ne 0) {
-            Write-Error "Tests failed. Publishing aborted."
-            Write-Host ""
+            Write-ErrorMessage "Tests failed. Publishing aborted."
+            Write-Warning ""
             Write-Warning "Fix the failing tests or use -SkipTests to bypass test execution."
             exit 1
         }
         Write-Success "All tests passed"
     }
     catch {
-        Write-Error "Test execution failed: $_"
+        Write-ErrorMessage "Test execution failed: $_"
         exit 1
     }
 }
 else {
-    Write-Warning "Tests skipped (use without -SkipTests to run tests)"
+    Write-WarningMessage "Tests skipped (use without -SkipTests to run tests)"
 }
 
 # Pack the NuGet package
@@ -179,13 +179,13 @@ Write-Info "Packing NuGet package..."
 try {
     dotnet pack $projectPath --configuration $Configuration --no-build --include-symbols --verbosity quiet
     if ($LASTEXITCODE -ne 0) {
-        Write-Error "Pack failed"
+        Write-ErrorMessage "Pack failed"
         exit 1
     }
     Write-Success "Package created"
 }
 catch {
-    Write-Error "Pack failed: $_"
+    Write-ErrorMessage "Pack failed: $_"
     exit 1
 }
 
@@ -195,7 +195,7 @@ $nupkgFiles = Get-ChildItem -Path $packagesPath -Filter "*.nupkg" -Recurse | Whe
 $snupkgFiles = Get-ChildItem -Path $packagesPath -Filter "*.snupkg" -Recurse
 
 if ($nupkgFiles.Count -eq 0) {
-    Write-Error "No NuGet package found in $packagesPath"
+    Write-ErrorMessage "No NuGet package found in $packagesPath"
     exit 1
 }
 
@@ -209,28 +209,28 @@ if ($symbolsFile) {
 }
 
 # Confirm publication
-Write-Host ""
-Write-Host "???????????????????????????????????????????????????????" -ForegroundColor Yellow
-Write-Host "  Ready to publish to NuGet.org" -ForegroundColor Yellow
-Write-Host "???????????????????????????????????????????????????????" -ForegroundColor Yellow
-Write-Host "  Package:       $($packageFile.Name)" -ForegroundColor White
-Write-Host "  Configuration: $Configuration" -ForegroundColor White
-Write-Host "  Tests:         $(if ($SkipTests) { 'Skipped' } else { 'Passed' })" -ForegroundColor White
-Write-Host "???????????????????????????????????????????????????????" -ForegroundColor Yellow
-Write-Host ""
+Write-Information "" -InformationAction Continue
+Write-Information "═══════════════════════════════════════" -InformationAction Continue
+Write-Information "  Ready to publish to NuGet.org" -InformationAction Continue
+Write-Information "═══════════════════════════════════════" -InformationAction Continue
+Write-Information "  Package:       $($packageFile.Name)" -InformationAction Continue
+Write-Information "  Configuration: $Configuration" -InformationAction Continue
+Write-Information "  Tests:         $(if ($SkipTests) { 'Skipped' } else { 'Passed' })" -InformationAction Continue
+Write-Information "═══════════════════════════════════════" -InformationAction Continue
+Write-Information "" -InformationAction Continue
 
 # Publish the main package
 Write-Info "Publishing package to NuGet.org..."
 try {
     dotnet nuget push $packageFile.FullName --api-key $nugetApiKey --source $nugetSource --skip-duplicate
     if ($LASTEXITCODE -ne 0) {
-        Write-Error "Package publish failed"
+        Write-ErrorMessage "Package publish failed"
         exit 1
     }
     Write-Success "Package published successfully"
 }
 catch {
-    Write-Error "Package publish failed: $_"
+    Write-ErrorMessage "Package publish failed: $_"
     exit 1
 }
 
@@ -240,25 +240,25 @@ if ($symbolsFile) {
     try {
         dotnet nuget push $symbolsFile.FullName --api-key $nugetApiKey --source $nugetSource --skip-duplicate
         if ($LASTEXITCODE -ne 0) {
-            Write-Warning "Symbols package publish failed (this is not critical)"
+            Write-WarningMessage "Symbols package publish failed (this is not critical)"
         }
         else {
             Write-Success "Symbols package published successfully"
         }
     }
     catch {
-        Write-Warning "Symbols package publish failed: $_"
+        Write-WarningMessage "Symbols package publish failed: $_"
     }
 }
 
 # Success!
-Write-Host ""
-Write-Host "??????????????????????????????????????????????????????????" -ForegroundColor Green
-Write-Host "?              ?? Publication Successful! ??            ?" -ForegroundColor Green
-Write-Host "??????????????????????????????????????????????????????????" -ForegroundColor Green
-Write-Host ""
+Write-Information "" -InformationAction Continue
+Write-Information "═════════════════════════════════════════════" -InformationAction Continue
+Write-Information "█              ✨ Publication Successful! ✨            █" -InformationAction Continue
+Write-Information "═════════════════════════════════════════════" -InformationAction Continue
+Write-Information "" -InformationAction Continue
 Write-Success "Package: $($packageFile.Name)"
 Write-Success "NuGet.org: https://www.nuget.org/packages/Solidtime.Api/"
-Write-Host ""
+Write-Information "" -InformationAction Continue
 Write-Info "Note: It may take a few minutes for the package to appear in NuGet search results."
-Write-Host ""
+Write-Information "" -InformationAction Continue

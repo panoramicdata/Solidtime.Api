@@ -12,7 +12,7 @@
 
 .NOTES
     This script uses Write-Output and Write-Warning for key information
-    to support output redirection. Colored decorative output uses Write-Host.
+    to support output redirection. Colored decorative output uses Write-Information.
 #>
 
 [CmdletBinding()]
@@ -27,7 +27,7 @@ function Write-ColoredOutput {
         [string]$Message,
         [System.ConsoleColor]$Color = 'White'
     )
-    Write-Host $Message -ForegroundColor $Color
+    Write-Information $Message -InformationAction Continue
 }
 
 # Get API token from user secrets if not provided
@@ -126,11 +126,11 @@ try {
     Write-Output ""
     
     Write-ColoredOutput "NEXT STEPS:" -Color Cyan
-    Write-Output "Once you have your Organization ID, configure it with:"
-    Write-Output ""
-    Write-Output "  cd Solidtime.Api.Test"
-    Write-Output "  dotnet user-secrets set `"Configuration:SampleOrganizationId`" `"YOUR-ORG-ID`" ""
-    Write-Output ""
+    Write-Output -InputObject "Once you have your Organization ID, configure it with:"
+    Write-Output -InputObject ""
+    Write-Output -InputObject "  cd Solidtime.Api.Test"
+    Write-Output -InputObject "  dotnet user-secrets set `"Configuration:SampleOrganizationId`" `"YOUR-ORG-ID`" ""
+    Write-Output -InputObject ""
     
     Write-ColoredOutput "Then run the tests:" -Color Cyan
     Write-Output "  dotnet test"

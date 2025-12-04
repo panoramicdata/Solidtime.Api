@@ -27,6 +27,11 @@ public class TimeEntryTests(ITestOutputHelper testOutputHelper, Fixture fixture)
 	/// <summary>
 	/// Tests that creating, updating, and deleting a time entry succeeds
 	/// </summary>
+	/// <remarks>
+	/// This integration test is intentionally longer than Codacy's 50-line complexity threshold.
+	/// The length is justified as it tests a complete CRUD workflow in a single transaction
+	/// to ensure data consistency and proper cleanup.
+	/// </remarks>
 	[Fact]
 	public async Task TimeEntries_CreateUpdateDelete_Succeeds()
 	{
