@@ -7,16 +7,34 @@
 
 ## Description
 
-This is a .NET 10.0 library for the Solidtime API.
+A .NET 10.0 client library for the [Solidtime API](https://docs.solidtime.io/api-reference).
 
 Solidtime is a modern, open-source time tracking solution with comprehensive project management, time tracking, reporting, and team collaboration features.
 
-This library provides strongly-typed access to the Solidtime API v1.
+This library provides strongly-typed access to the Solidtime API v1 with full support for:
+- **API Tokens** - Personal access token management
+- **Users** - User profile and current user information
+- **Organizations** - Organization management and settings
+- **Clients** - Client management with pagination
+- **Projects** - Project management with archiving support
+- **Project Members** - Project member and billing rate management
+- **Tags** - Tag management with pagination
+- **Tasks** - Task management
+- **Time Entries** - Full time tracking with start/stop timer support
+- **Members** - Organization member management
+- **Reports** - Report generation and management
+- **Charts** - Data visualization endpoints
+- **Imports** - Data import from other time tracking tools
 
 ## Installation
 
 ```bash
 dotnet add package Solidtime.Api
+```
+
+Or via Package Manager:
+```powershell
+Install-Package Solidtime.Api
 ```
 
 ## Quick Start
