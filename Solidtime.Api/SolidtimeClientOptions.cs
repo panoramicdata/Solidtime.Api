@@ -59,14 +59,10 @@ public class SolidtimeClientOptions
 		}
 
 		// Validate BaseUrl format
-		if (!Uri.TryCreate(BaseUrl, UriKind.Absolute, out var uri))
+		if (!Uri.TryCreate(BaseUrl, UriKind.Absolute, out var uri) ||
+			(uri.Scheme != "https" && uri.Scheme != "http"))
 		{
-			throw new InvalidOperationException($"BaseUrl '{BaseUrl}' is not a valid URI");
-		}
-
-		if (uri.Scheme != "https" && uri.Scheme != "http")
-		{
-			throw new InvalidOperationException("BaseUrl must use http or https scheme");
+			throw new InvalidOperationException($"BaseUrl '{BaseUrl}' is not a valid HTTP or HTTPS URI");
 		}
 	}
 }

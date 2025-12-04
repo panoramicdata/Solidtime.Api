@@ -13,12 +13,12 @@ public interface ITags
 	/// </summary>
 	/// <param name="organizationId">The organization ID</param>
 	/// <param name="cancellationToken">Cancellation token</param>
-	/// <returns>A list of tags wrapped in a data wrapper</returns>
+	/// <returns>A paginated list of tags</returns>
 	/// <remarks>
 	/// Note: This endpoint does not support pagination. All tags are returned in a single request.
 	/// </remarks>
 	[Get("/v1/organizations/{organization}/tags")]
-	Task<DataWrapper<List<Tag>>> GetAsync(
+	Task<PaginatedResponse<Tag>> GetAsync(
 		[AliasAs("organization")] string organizationId,
 		CancellationToken cancellationToken);
 

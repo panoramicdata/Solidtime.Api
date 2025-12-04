@@ -281,21 +281,21 @@ public class TestDataManager(SolidtimeClient client, string organizationId, ILog
 		try
 		{
 			var clients = await _client.Clients.GetAsync(organizationId, null, null, cancellationToken);
-			foreach (var client in clients.Data)
+			foreach (var clientEntity in clients.Data)
 			{
 				try
 				{
-					await _client.Clients.DeleteAsync(organizationId, client.Id, cancellationToken);
-					logger.LogDebug("Deleted client: {ClientId}", client.Id);
+					await _client.Clients.DeleteAsync(organizationId, clientEntity.Id, cancellationToken);
+					logger.LogDebug("Deleted client: {ClientId}", clientEntity.Id);
 				}
 				catch (ApiException ex) when (ex.StatusCode == HttpStatusCode.NotFound)
 				{
 					// Already deleted, ignore
-					logger.LogDebug("Client {ClientId} already deleted", client.Id);
+					logger.LogDebug("Client {ClientId} already deleted", clientEntity.Id);
 				}
 				catch (Exception ex)
 				{
-					logger.LogWarning(ex, "Failed to delete client {ClientId}", client.Id);
+					logger.LogWarning(ex, "Failed to delete client {ClientId}", clientEntity.Id);
 				}
 			}
 		}

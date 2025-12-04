@@ -9,12 +9,26 @@
 
 .EXAMPLE
     .\GetOrganizationId.ps1
+
+.NOTES
+    This script uses Write-Output and Write-Warning for key information
+    to support output redirection. Colored decorative output uses Write-Host.
 #>
 
+[CmdletBinding()]
 param(
     [Parameter(Mandatory=$false)]
     [string]$ApiToken
 )
+
+# Helper function to write colored output (decorative only)
+function Write-ColoredOutput {
+    param(
+        [string]$Message,
+        [System.ConsoleColor]$Color = 'White'
+    )
+    Write-Host $Message -ForegroundColor $Color
+}
 
 # Get API token from user secrets if not provided
 if ([string]::IsNullOrWhiteSpace($ApiToken)) {
@@ -26,7 +40,7 @@ if ([string]::IsNullOrWhiteSpace($ApiToken)) {
         $tokenLine = $secretsList | Select-String "Configuration:ApiToken"
         if ($tokenLine) {
             $ApiToken = ($tokenLine -replace '.*= ', '').Trim()
-            Write-Host "? Found API token in user secrets" -ForegroundColor Green
+            Write-ColoredOutput "? Found API token in user secrets" -Color Green
         }
     } catch {
         Pop-Location
@@ -39,7 +53,7 @@ if ([string]::IsNullOrWhiteSpace($ApiToken)) {
 }
 
 if ([string]::IsNullOrWhiteSpace($ApiToken)) {
-    Write-Host "? Error: API token is required" -ForegroundColor Red
+    Write-Error "API token is required"
     exit 1
 }
 
@@ -49,19 +63,20 @@ $headers = @{
     "Accept" = "application/json"
 }
 
-Write-Host "`n?? Fetching user information...`n" -ForegroundColor Cyan
+Write-ColoredOutput "`n?? Fetching user information...`n" -Color Cyan
 
 try {
     # Get current user
     $meResponse = Invoke-RestMethod -Uri "$baseUrl/v1/users/me" -Headers $headers -Method Get
     
-    Write-Host "? Successfully authenticated!" -ForegroundColor Green
-    Write-Host "`nUser Information:" -ForegroundColor Yellow
-    Write-Host "  Name: $($meResponse.data.name)"
-    Write-Host "  Email: $($meResponse.data.email)"
-    Write-Host "  User ID: $($meResponse.data.id)"
+    Write-ColoredOutput "? Successfully authenticated!" -Color Green
+    Write-Output ""
+    Write-Output "User Information:"
+    Write-Output "  Name: $($meResponse.data.name)"
+    Write-Output "  Email: $($meResponse.data.email)"
+    Write-Output "  User ID: $($meResponse.data.id)"
     
-    Write-Host "`n?? Attempting to discover your organization ID...`n" -ForegroundColor Cyan
+    Write-ColoredOutput "`n?? Attempting to discover your organization ID...`n" -Color Cyan
     
     # Strategy: Try to infer organization from API token endpoint
     # API tokens are created within an organization context
@@ -70,61 +85,67 @@ try {
         
         # Check if there's any organization hint in the response
         if ($tokensResponse.data -and $tokensResponse.data.Count -gt 0) {
-            Write-Host "?? Found $($tokensResponse.data.Count) API token(s)" -ForegroundColor Cyan
+            Write-ColoredOutput "?? Found $($tokensResponse.data.Count) API token(s)" -Color Cyan
         }
     } catch {
-        Write-Host "??  Could not fetch API tokens" -ForegroundColor Yellow
+        Write-Warning "Could not fetch API tokens"
     }
     
-    Write-Host "`n?? Organization ID Discovery Methods:`n" -ForegroundColor Cyan
+    Write-ColoredOutput "`n?? Organization ID Discovery Methods:`n" -Color Cyan
     
-    Write-Host "METHOD 1: Via Solidtime Web UI (Recommended)" -ForegroundColor Green
-    Write-Host "  1. Go to https://app.solidtime.io"
-    Write-Host "  2. Log in with your account"
-    Write-Host "  3. Look at the URL in your browser's address bar"
-    Write-Host "  4. The URL format is: /teams/{YOUR-ORG-ID}/..."
-    Write-Host "  5. Copy the UUID (format: xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx)"
-    Write-Host "  6. Note: The UI uses 'teams' in URLs, but the API uses 'organizations'`n"
+    Write-ColoredOutput "METHOD 1: Via Solidtime Web UI (Recommended)" -Color Green
+    Write-Output "  1. Go to https://app.solidtime.io"
+    Write-Output "  2. Log in with your account"
+    Write-Output "  3. Look at the URL in your browser's address bar"
+    Write-Output "  4. The URL format is: /teams/{YOUR-ORG-ID}/..."
+    Write-Output "  5. Copy the UUID (format: xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx)"
+    Write-Output "  6. Note: The UI uses 'teams' in URLs, but the API uses 'organizations'"
+    Write-Output ""
     
-    Write-Host "EXAMPLE:" -ForegroundColor Yellow
-    Write-Host "  If your URL is: https://app.solidtime.io/teams/8ea33e20-bceb-4b6b-b5bb-49fadc00677a"
-    Write-Host "  Your Organization ID is: 8ea33e20-bceb-4b6b-b5bb-49fadc00677a`n"
+    Write-ColoredOutput "EXAMPLE:" -Color Yellow
+    Write-Output "  If your URL is: https://app.solidtime.io/teams/8ea33e20-bceb-4b6b-b5bb-49fadc00677a"
+    Write-Output "  Your Organization ID is: 8ea33e20-bceb-4b6b-b5bb-49fadc00677a"
+    Write-Output ""
     
-    Write-Host "METHOD 2: Via Browser Developer Tools (Advanced)" -ForegroundColor Green
-    Write-Host "  1. Open https://app.solidtime.io in your browser"
-    Write-Host "  2. Press F12 to open Developer Tools"
-    Write-Host "  3. Go to the 'Network' tab"
-    Write-Host "  4. Click on 'Projects', 'Time Entries', or any other menu item"
-    Write-Host "  5. Look at the API request URLs in the Network tab"
-    Write-Host "  6. You'll see URLs like: /v1/organizations/{YOUR-ORG-ID}/projects"
-    Write-Host "  7. Copy the organization ID from the URL`n"
+    Write-ColoredOutput "METHOD 2: Via Browser Developer Tools (Advanced)" -Color Green
+    Write-Output "  1. Open https://app.solidtime.io in your browser"
+    Write-Output "  2. Press F12 to open Developer Tools"
+    Write-Output "  3. Go to the 'Network' tab"
+    Write-Output "  4. Click on 'Projects', 'Time Entries', or any other menu item"
+    Write-Output "  5. Look at the API request URLs in the Network tab"
+    Write-Output "  6. You'll see URLs like: /v1/organizations/{YOUR-ORG-ID}/projects"
+    Write-Output "  7. Copy the organization ID from the URL"
+    Write-Output ""
     
-    Write-Host "METHOD 3: Check Your Browser's Local Storage (Advanced)" -ForegroundColor Green
-    Write-Host "  1. Open https://app.solidtime.io in your browser"
-    Write-Host "  2. Press F12 to open Developer Tools"
-    Write-Host "  3. Go to 'Application' tab (Chrome) or 'Storage' tab (Firefox)"
-    Write-Host "  4. Look under 'Local Storage' ? 'https://app.solidtime.io'"
-    Write-Host "  5. Look for keys related to 'organization' or 'current_organization'`n"
+    Write-ColoredOutput "METHOD 3: Check Your Browser's Local Storage (Advanced)" -Color Green
+    Write-Output "  1. Open https://app.solidtime.io in your browser"
+    Write-Output "  2. Press F12 to open Developer Tools"
+    Write-Output "  3. Go to 'Application' tab (Chrome) or 'Storage' tab (Firefox)"
+    Write-Output "  4. Look under 'Local Storage' ? 'https://app.solidtime.io'"
+    Write-Output "  5. Look for keys related to 'organization' or 'current_organization'"
+    Write-Output ""
     
-    Write-Host "NEXT STEPS:" -ForegroundColor Cyan
-    Write-Host "Once you have your Organization ID, configure it with:`n"
-    Write-Host "  cd Solidtime.Api.Test" -ForegroundColor White
-    Write-Host "  dotnet user-secrets set `"Configuration:SampleOrganizationId`" `"YOUR-ORG-ID`"`n" -ForegroundColor White
+    Write-ColoredOutput "NEXT STEPS:" -Color Cyan
+    Write-Output "Once you have your Organization ID, configure it with:"
+    Write-Output ""
+    Write-Output "  cd Solidtime.Api.Test"
+    Write-Output "  dotnet user-secrets set `"Configuration:SampleOrganizationId`" `"YOUR-ORG-ID`" ""
+    Write-Output ""
     
-    Write-Host "Then run the tests:" -ForegroundColor Cyan
-    Write-Host "  dotnet test`n" -ForegroundColor White
+    Write-ColoredOutput "Then run the tests:" -Color Cyan
+    Write-Output "  dotnet test"
+    Write-Output ""
     
 } catch {
     $statusCode = $_.Exception.Response.StatusCode.value__
     
     if ($statusCode -eq 401) {
-        Write-Host "? Authentication failed!" -ForegroundColor Red
-        Write-Host "`nThe API token appears to be invalid or expired." -ForegroundColor Yellow
-        Write-Host "Please create a new token at: https://app.solidtime.io/settings/api-tokens`n"
+        Write-Error "Authentication failed! The API token appears to be invalid or expired."
+        Write-Output "Please create a new token at: https://app.solidtime.io/settings/api-tokens"
     } else {
-        Write-Host "? Error: $($_.Exception.Message)" -ForegroundColor Red
+        Write-Error $_.Exception.Message
         if ($_.ErrorDetails.Message) {
-            Write-Host "Details: $($_.ErrorDetails.Message)" -ForegroundColor Yellow
+            Write-Warning "Details: $($_.ErrorDetails.Message)"
         }
     }
     exit 1

@@ -12,12 +12,12 @@ public interface IClients
 	/// <param name="page">Page number for pagination (optional)</param>
 	/// <param name="archived">Filter by archived status: "true", "false", or "all" (optional)</param>
 	/// <param name="cancellationToken">Cancellation token</param>
-	/// <returns>A list of clients wrapped in a data wrapper</returns>
+	/// <returns>A paginated list of clients</returns>
 	/// <remarks>
 	/// Note: The API does not support per_page parameter. Use page for pagination.
 	/// </remarks>
 	[Get("/v1/organizations/{organization}/clients")]
-	Task<DataWrapper<List<Client>>> GetAsync(
+	Task<PaginatedResponse<Client>> GetAsync(
 		[AliasAs("organization")] string organizationId,
 		[Query] int? page,
 		[Query] string? archived,
