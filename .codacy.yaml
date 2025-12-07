@@ -1,0 +1,5 @@
+---
+engines:
+  sonar-csharp:
+    exclude_paths:
+      - "Solidtime.Api/AuthenticatedHttpClientHandler.cs"
