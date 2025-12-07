@@ -76,7 +76,9 @@ public class TaskTests(ITestOutputHelper testOutputHelper, Fixture fixture)
 		finally
 		{
 			if (taskId != null)
+			{
 				await SafeDeleteAsync(() => SolidtimeClient.Tasks.DeleteAsync(organizationId, taskId, CancellationToken));
+			}
 		}
 	}
 

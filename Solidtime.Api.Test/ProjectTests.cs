@@ -75,7 +75,9 @@ public class ProjectTests(ITestOutputHelper testOutputHelper, Fixture fixture)
 		finally
 		{
 			if (projectId != null)
+			{
 				await SafeDeleteAsync(() => SolidtimeClient.Projects.DeleteAsync(organizationId, projectId, CancellationToken));
+			}
 		}
 	}
 

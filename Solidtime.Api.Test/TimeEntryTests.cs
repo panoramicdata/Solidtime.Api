@@ -76,7 +76,9 @@ public class TimeEntryTests(ITestOutputHelper testOutputHelper, Fixture fixture)
 		finally
 		{
 			if (timeEntryId != null)
+			{
 				await SafeDeleteAsync(() => SolidtimeClient.TimeEntries.DeleteAsync(organizationId, timeEntryId, CancellationToken));
+			}
 		}
 	}
 

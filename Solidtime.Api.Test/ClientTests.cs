@@ -64,7 +64,9 @@ public class ClientTests(ITestOutputHelper testOutputHelper, Fixture fixture)
 		finally
 		{
 			if (clientId != null)
+			{
 				await SafeDeleteAsync(() => SolidtimeClient.Clients.DeleteAsync(organizationId, clientId, CancellationToken));
+			}
 		}
 	}
 

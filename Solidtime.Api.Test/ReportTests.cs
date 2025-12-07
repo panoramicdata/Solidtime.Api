@@ -75,7 +75,9 @@ public class ReportTests(ITestOutputHelper testOutputHelper, Fixture fixture)
 		finally
 		{
 			if (reportId != null)
+			{
 				await SafeDeleteAsync(() => SolidtimeClient.Reports.DeleteAsync(organizationId, reportId, CancellationToken));
+			}
 		}
 	}
 

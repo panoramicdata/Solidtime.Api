@@ -62,7 +62,9 @@ public class TagTests(ITestOutputHelper testOutputHelper, Fixture fixture)
 		finally
 		{
 			if (tagId != null)
+			{
 				await SafeDeleteAsync(() => SolidtimeClient.Tags.DeleteAsync(organizationId, tagId, CancellationToken));
+			}
 		}
 	}
 
