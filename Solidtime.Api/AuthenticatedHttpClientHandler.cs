@@ -9,7 +9,9 @@ namespace Solidtime.Api;
 /// <summary>
 /// HTTP client handler that adds Bearer token authentication to requests and handles rate limiting (429) with backoff
 /// </summary>
+#pragma warning disable S2333 // "partial" is required for LoggerMessage source generator
 public partial class AuthenticatedBackingOffHttpClientHandler : DelegatingHandler
+#pragma warning restore S2333
 {
 	private readonly SolidtimeClientOptions _options;
 	private readonly ILogger _logger;
