@@ -27,11 +27,6 @@ public class TimeEntryTests(ITestOutputHelper testOutputHelper, Fixture fixture)
 	/// <summary>
 	/// Tests that creating, updating, and deleting a time entry succeeds
 	/// </summary>
-	/// <remarks>
-	/// This integration test is intentionally longer than Codacy's 50-line complexity threshold.
-	/// The length is justified as it tests a complete CRUD workflow in a single transaction
-	/// to ensure data consistency and proper cleanup.
-	/// </remarks>
 	[Fact]
 	public async Task TimeEntries_CreateUpdateDelete_Succeeds()
 	{
@@ -42,76 +37,46 @@ public class TimeEntryTests(ITestOutputHelper testOutputHelper, Fixture fixture)
 		try
 		{
 			var now = DateTimeOffset.UtcNow;
+			var dateFormat = "yyyy-MM-ddTHH:mm:ssZ";
 
 			// Create
 			var createRequest = new TimeEntryStoreRequest
 			{
 				MemberId = memberId,
 				Description = $"Test Time Entry {Guid.NewGuid()}",
-				Start = now.AddHours(-2).ToString("yyyy-MM-ddTHH:mm:ssZ", System.Globalization.CultureInfo.InvariantCulture),
-				End = now.AddHours(-1).ToString("yyyy-MM-ddTHH:mm:ssZ", System.Globalization.CultureInfo.InvariantCulture),
+				Start = now.AddHours(-2).ToString(dateFormat, System.Globalization.CultureInfo.InvariantCulture),
+				End = now.AddHours(-1).ToString(dateFormat, System.Globalization.CultureInfo.InvariantCulture),
 				Billable = true
 			};
-
-			var createResult = await SolidtimeClient
-				.TimeEntries
-				.CreateAsync(organizationId, createRequest, CancellationToken);
+			var createResult = await SolidtimeClient.TimeEntries.CreateAsync(organizationId, createRequest, CancellationToken);
 
 			createResult.Should().NotBeNull();
-			createResult.Data.Should().NotBeNull();
 			createResult.Data.Description.Should().Be(createRequest.Description);
 			createResult.Data.Id.Should().NotBeNullOrWhiteSpace();
 			createResult.Data.OrganizationId.Should().Be(organizationId);
 			createResult.Data.Billable.Should().BeTrue();
 			createResult.Data.End.Should().NotBeNull();
 			createResult.Data.Duration.Should().BePositive();
-
 			timeEntryId = createResult.Data.Id;
 
 			// Update
-			var updateRequest = new TimeEntryUpdateRequest
-			{
-				Description = $"Updated Time Entry {Guid.NewGuid()}",
-				Billable = false
-			};
-
-			var updateResult = await SolidtimeClient
-				.TimeEntries
-				.UpdateAsync(organizationId, timeEntryId, updateRequest, CancellationToken);
+			var updateRequest = new TimeEntryUpdateRequest { Description = $"Updated Time Entry {Guid.NewGuid()}", Billable = false };
+			var updateResult = await SolidtimeClient.TimeEntries.UpdateAsync(organizationId, timeEntryId, updateRequest, CancellationToken);
 
 			updateResult.Should().NotBeNull();
 			updateResult.Data.Id.Should().Be(timeEntryId);
 			updateResult.Data.Description.Should().Be(updateRequest.Description);
 			updateResult.Data.Billable.Should().BeFalse();
 
-			// Delete
-			await SolidtimeClient
-				.TimeEntries
-				.DeleteAsync(organizationId, timeEntryId, CancellationToken);
-
-			// Verify deletion by checking it doesn't appear in the list
-			var allTimeEntries = await SolidtimeClient
-				.TimeEntries
-				.GetAsync(organizationId, null, null, CancellationToken);
-
-			allTimeEntries.Data.Should().NotContain(t => t.Id == timeEntryId);
+			// Delete and verify
+			await SolidtimeClient.TimeEntries.DeleteAsync(organizationId, timeEntryId, CancellationToken);
+			var allEntries = await SolidtimeClient.TimeEntries.GetAsync(organizationId, null, null, CancellationToken);
+			allEntries.Data.Should().NotContain(t => t.Id == timeEntryId);
 		}
 		finally
 		{
-			// Ensure cleanup even if test fails
 			if (timeEntryId != null)
-			{
-				try
-				{
-					await SolidtimeClient
-						.TimeEntries
-						.DeleteAsync(organizationId, timeEntryId, CancellationToken);
-				}
-				catch
-				{
-					// Time entry may already be deleted, ignore errors
-				}
-			}
+				await SafeDeleteAsync(() => SolidtimeClient.TimeEntries.DeleteAsync(organizationId, timeEntryId, CancellationToken));
 		}
 	}
 

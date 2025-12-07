@@ -216,4 +216,14 @@ public class SolidtimeTest : TestBed<Fixture>
 		// Return the first member (usually the current user)
 		return members.Data.First().Id;
 	}
+
+	/// <summary>
+	/// Safely executes a delete operation, ignoring errors if the resource was already deleted
+	/// </summary>
+	/// <param name="deleteAction">The delete action to execute</param>
+	protected static async Task SafeDeleteAsync(Func<Task> deleteAction)
+	{
+		try { await deleteAction(); }
+		catch { /* Resource may already be deleted */ }
+	}
 }

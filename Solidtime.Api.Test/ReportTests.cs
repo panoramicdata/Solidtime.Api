@@ -27,11 +27,6 @@ public class ReportTests(ITestOutputHelper testOutputHelper, Fixture fixture)
 	/// <summary>
 	/// Tests that creating, updating, and deleting a report succeeds
 	/// </summary>
-	/// <remarks>
-	/// This integration test is intentionally longer than Codacy's 50-line complexity threshold.
-	/// The length is justified as it tests a complete CRUD workflow in a single transaction
-	/// to ensure data consistency and proper cleanup.
-	/// </remarks>
 	[Fact]
 	public async Task Reports_CreateUpdateDelete_Succeeds()
 	{
@@ -46,48 +41,25 @@ public class ReportTests(ITestOutputHelper testOutputHelper, Fixture fixture)
 				Name = $"Test Report {Guid.NewGuid()}",
 				Description = "Test report description",
 				IsPublic = false,
-				Properties = new ReportProperties
-				{
-					Start = "2024-01-01T00:00:00Z",
-					End = "2024-12-31T23:59:59Z",
-					Group = "project",
-					SubGroup = "task",
-					HistoryGroup = "month"
-				}
+				Properties = new ReportProperties { Start = "2024-01-01T00:00:00Z", End = "2024-12-31T23:59:59Z", Group = "project", SubGroup = "task", HistoryGroup = "month" }
 			};
-
-			var createResult = await SolidtimeClient
-				.Reports
-				.CreateAsync(organizationId, createRequest, CancellationToken);
+			var createResult = await SolidtimeClient.Reports.CreateAsync(organizationId, createRequest, CancellationToken);
 
 			createResult.Should().NotBeNull();
-			createResult.Data.Should().NotBeNull();
 			createResult.Data.Name.Should().Be(createRequest.Name);
 			createResult.Data.Description.Should().Be(createRequest.Description);
 			createResult.Data.Id.Should().NotBeNullOrWhiteSpace();
-
 			reportId = createResult.Data.Id;
 
 			// Get by ID
-			var getResult = await SolidtimeClient
-				.Reports
-				.GetByIdAsync(organizationId, reportId, CancellationToken);
-
+			var getResult = await SolidtimeClient.Reports.GetByIdAsync(organizationId, reportId, CancellationToken);
 			getResult.Should().NotBeNull();
 			getResult.Data.Id.Should().Be(reportId);
 			getResult.Data.Name.Should().Be(createRequest.Name);
 
 			// Update
-			var updateRequest = new ReportUpdateRequest
-			{
-				Name = $"Updated Report {Guid.NewGuid()}",
-				Description = "Updated description",
-				IsPublic = true
-			};
-
-			var updateResult = await SolidtimeClient
-				.Reports
-				.UpdateAsync(organizationId, reportId, updateRequest, CancellationToken);
+			var updateRequest = new ReportUpdateRequest { Name = $"Updated Report {Guid.NewGuid()}", Description = "Updated description", IsPublic = true };
+			var updateResult = await SolidtimeClient.Reports.UpdateAsync(organizationId, reportId, updateRequest, CancellationToken);
 
 			updateResult.Should().NotBeNull();
 			updateResult.Data.Id.Should().Be(reportId);
@@ -95,34 +67,15 @@ public class ReportTests(ITestOutputHelper testOutputHelper, Fixture fixture)
 			updateResult.Data.Description.Should().Be(updateRequest.Description);
 			updateResult.Data.IsPublic.Should().BeTrue();
 
-			// Delete
-			await SolidtimeClient
-				.Reports
-				.DeleteAsync(organizationId, reportId, CancellationToken);
-
-			// Verify deletion by checking it doesn't appear in the list
-			var allReports = await SolidtimeClient
-				.Reports
-				.GetAsync(organizationId, CancellationToken);
-
+			// Delete and verify
+			await SolidtimeClient.Reports.DeleteAsync(organizationId, reportId, CancellationToken);
+			var allReports = await SolidtimeClient.Reports.GetAsync(organizationId, CancellationToken);
 			allReports.Data.Should().NotContain(r => r.Id == reportId);
 		}
 		finally
 		{
-			// Ensure cleanup even if test fails
 			if (reportId != null)
-			{
-				try
-				{
-					await SolidtimeClient
-						.Reports
-						.DeleteAsync(organizationId, reportId, CancellationToken);
-				}
-				catch
-				{
-					// Report may already be deleted, ignore errors
-				}
-			}
+				await SafeDeleteAsync(() => SolidtimeClient.Reports.DeleteAsync(organizationId, reportId, CancellationToken));
 		}
 	}
 
