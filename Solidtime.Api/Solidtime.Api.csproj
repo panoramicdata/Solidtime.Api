@@ -42,7 +42,7 @@
 	</PropertyGroup>
 
 	<ItemGroup>
-		<Content Include="SolidtimeSiolidtime.png" />
+		<Content Include="Solidtime.png" />
 	</ItemGroup>
 
 	<ItemGroup>
