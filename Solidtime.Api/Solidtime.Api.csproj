@@ -13,7 +13,7 @@
 		<Company>Panoramic Data Limited</Company>
 		<Description>Solidtime API client library for .NET</Description>
 		<Copyright>Panoramic Data Limited 2025</Copyright>
-		<PackageIcon>Icon.png</PackageIcon>
+		<PackageIcon>Solidtime.png</PackageIcon>
 		<PackageLicenseExpression>MIT</PackageLicenseExpression>
 		<PackageProjectUrl>https://github.com/panoramicdata/Solidtime.Api</PackageProjectUrl>
 		<RepositoryUrl>https://github.com/panoramicdata/Solidtime.Api</RepositoryUrl>
