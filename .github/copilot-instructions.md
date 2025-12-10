@@ -17,6 +17,34 @@
 - 404 errors? Check if test data exists, document the requirement
 - Use `JsonExtensionData` during development to discover missing properties, then add them properly
 
+### ⚠️ Terminal Command Limitations
+
+When using `run_command_in_terminal`, **NEVER** use PowerShell here-strings (`@'...'@` or `@"..."@`). They cause the terminal to hang indefinitely because line breaks aren't preserved correctly through terminal automation.
+
+**Why this happens**: PowerShell here-strings require the opening delimiter at the end of a line, content on subsequent lines, and the closing delimiter at the start of its own line. When commands are sent through terminal automation, these line breaks get mangled.
+
+**✅ Alternatives**:
+1. **For file edits**: Use the `edit_file` tool (preferred)
+2. **For simple replacements**: Use single-line `-replace` with escaped patterns
+3. **For complex multi-line content**: Provide code to the user to paste manually
+4. **If terminal is absolutely needed**: Write content to a temp file first, then use that file
+
+**Example of what NOT to do**:
+```powershell
+# ❌ BAD - will hang forever
+$content = @'
+line 1
+line 2
+'@
+```
+
+**Example of correct approach**:
+```powershell
+# ✅ GOOD - use edit_file tool instead for multi-line content
+# ✅ GOOD - use single-line commands with -replace for simple changes
+$content = $content -replace 'old', 'new'
+```
+
 ---
 
 ## Project Status

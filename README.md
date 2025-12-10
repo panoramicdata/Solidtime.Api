@@ -50,14 +50,15 @@ var client = new SolidtimeClient(new SolidtimeClientOptions
 
 // Get current user information
 var me = await client.Me.GetAsync(CancellationToken.None);
-Console.WriteLine($"Hello, {me.Data.Name}!", );
+Console.WriteLine($"Hello, {me.Data.Name}!");
 
-// Get organizations
-var organizations = await client.Organizations.GetAsync(CancellationToken.None);
-var orgId = organizations.Data.First().Id;
+// Get an organization (you need to know your organization ID)
+var organizationId = "your-organization-uuid";
+var organization = await client.Organizations.GetAsync(organizationId, CancellationToken.None);
+Console.WriteLine($"Organization: {organization.Data.Name}");
 
 // Get projects for an organization
-var projects = await client.Projects.GetAsync(orgId, null, null, CancellationToken.None);
+var projects = await client.Projects.GetAsync(organizationId, null, null, CancellationToken.None);
 foreach (var project in projects.Data)
 {
     Console.WriteLine($"Project: {project.Name}");
@@ -128,7 +129,7 @@ var updatedProject = await client.Projects.UpdateAsync(
 var projects = await client.Projects.GetAsync(
     organizationId,
     page: 1,
-    perPage: 50,
+    archived: null,
     CancellationToken.None);
 ```
 
@@ -163,7 +164,7 @@ var stoppedEntry = await client.TimeEntries.UpdateAsync(
 
 ```csharp
 // Create a client
-var client = await client.Clients.CreateAsync(
+var newClient = await client.Clients.CreateAsync(
     organizationId,
     new ClientStoreRequest
     {
@@ -174,6 +175,8 @@ var client = await client.Clients.CreateAsync(
 // List all clients
 var clients = await client.Clients.GetAsync(
     organizationId,
+    page: null,
+    archived: null,
     CancellationToken.None);
 ```
 
@@ -184,7 +187,7 @@ The library throws `SolidtimeApiException` for API errors:
 ```csharp
 try
 {
-    var project = await client.Projects.GetAsync(orgId, projectId, CancellationToken.None);
+    var project = await client.Projects.GetByIdAsync(orgId, projectId, CancellationToken.None);
 }
 catch (SolidtimeApiException ex)
 {
