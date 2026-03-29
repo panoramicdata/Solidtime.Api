@@ -1,3 +1,4 @@
+using Microsoft.Extensions.Logging;
 using System.Net;
 using System.Threading;
 
@@ -16,7 +17,10 @@ public class TestDataManager(SolidtimeClient client, string organizationId, ILog
 	/// </summary>
 	public async Task SetupTestDataAsync(CancellationToken cancellationToken)
 	{
-		logger.LogInformation("Setting up test data for organization {OrganizationId}", organizationId);
+        if (logger.IsEnabled(LogLevel.Information))
+		{
+			logger.LogInformation("Setting up test data for organization {OrganizationId}", organizationId);
+		}
 
 		try
 		{
@@ -31,7 +35,10 @@ public class TestDataManager(SolidtimeClient client, string organizationId, ILog
 
 			var clientResult = await _client.Clients.CreateAsync(organizationId, clientRequest, cancellationToken);
 			SampleClientId = clientResult.Data.Id;
-			logger.LogInformation("Created sample client: {ClientId}", SampleClientId);
+         if (logger.IsEnabled(LogLevel.Information))
+			{
+				logger.LogInformation("Created sample client: {ClientId}", SampleClientId);
+			}
 
 			// Create a sample project for tests
 			// Note: Using lowercase Material Design color (from user's color palette)
@@ -45,7 +52,10 @@ public class TestDataManager(SolidtimeClient client, string organizationId, ILog
 
 			var projectResult = await _client.Projects.CreateAsync(organizationId, projectRequest, cancellationToken);
 			SampleProjectId = projectResult.Data.Id;
-			logger.LogInformation("Created sample project: {ProjectId}", SampleProjectId);
+          if (logger.IsEnabled(LogLevel.Information))
+			{
+				logger.LogInformation("Created sample project: {ProjectId}", SampleProjectId);
+			}
 
 			// Create a sample tag for tests
 			var tagRequest = new TagStoreRequest
@@ -55,7 +65,10 @@ public class TestDataManager(SolidtimeClient client, string organizationId, ILog
 
 			var tagResult = await _client.Tags.CreateAsync(organizationId, tagRequest, cancellationToken);
 			SampleTagId = tagResult.Data.Id;
-			logger.LogInformation("Created sample tag: {TagId}", SampleTagId);
+          if (logger.IsEnabled(LogLevel.Information))
+			{
+				logger.LogInformation("Created sample tag: {TagId}", SampleTagId);
+			}
 
 			// Create sample time entries for chart tests
 			// Create entries over the last 4 weeks to ensure charts have data
@@ -93,7 +106,7 @@ public class TestDataManager(SolidtimeClient client, string organizationId, ILog
 			// Create 4 time entries spread over the last 4 weeks
 			for (var weekOffset = 0; weekOffset < 4; weekOffset++)
 			{
-				var entryDate = now.AddDays(-7 * weekOffset);
+               var entryDate = now.AddDays(-(7 * weekOffset + 1));
 				var startTime = new DateTimeOffset(
 					entryDate.Year,
 					entryDate.Month,
@@ -114,10 +127,16 @@ public class TestDataManager(SolidtimeClient client, string organizationId, ILog
 				};
 
 				await _client.TimeEntries.CreateAsync(organizationId, timeEntryRequest, cancellationToken);
-				logger.LogDebug("Created sample time entry for {Date}", startTime);
+             if (logger.IsEnabled(LogLevel.Debug))
+				{
+					logger.LogDebug("Created sample time entry for {Date}", startTime);
+				}
 			}
 
-			logger.LogInformation("Created {Count} sample time entries", 4);
+            if (logger.IsEnabled(LogLevel.Information))
+			{
+				logger.LogInformation("Created {Count} sample time entries", 4);
+			}
 		}
 		catch (Exception ex)
 		{
@@ -132,7 +151,10 @@ public class TestDataManager(SolidtimeClient client, string organizationId, ILog
 	/// </summary>
 	public async Task CleanupAllTestDataAsync(CancellationToken cancellationToken)
 	{
-		logger.LogInformation("Cleaning up all test data for organization {OrganizationId}", organizationId);
+       if (logger.IsEnabled(LogLevel.Information))
+		{
+			logger.LogInformation("Cleaning up all test data for organization {OrganizationId}", organizationId);
+		}
 
 		try
 		{
@@ -170,12 +192,18 @@ public class TestDataManager(SolidtimeClient client, string organizationId, ILog
 				try
 				{
 					await _client.TimeEntries.DeleteAsync(organizationId, entry.Id, cancellationToken);
-					logger.LogDebug("Deleted time entry: {TimeEntryId}", entry.Id);
+                 if (logger.IsEnabled(LogLevel.Debug))
+					{
+						logger.LogDebug("Deleted time entry: {TimeEntryId}", entry.Id);
+					}
 				}
 				catch (ApiException ex) when (ex.StatusCode == HttpStatusCode.NotFound)
 				{
 					// Already deleted, ignore
-					logger.LogDebug("Time entry {TimeEntryId} already deleted", entry.Id);
+                  if (logger.IsEnabled(LogLevel.Debug))
+					{
+						logger.LogDebug("Time entry {TimeEntryId} already deleted", entry.Id);
+					}
 				}
 				catch (Exception ex)
 				{
@@ -199,12 +227,18 @@ public class TestDataManager(SolidtimeClient client, string organizationId, ILog
 				try
 				{
 					await _client.Tasks.DeleteAsync(organizationId, task.Id, cancellationToken);
-					logger.LogDebug("Deleted task: {TaskId}", task.Id);
+                 if (logger.IsEnabled(LogLevel.Debug))
+					{
+						logger.LogDebug("Deleted task: {TaskId}", task.Id);
+					}
 				}
 				catch (ApiException ex) when (ex.StatusCode == HttpStatusCode.NotFound)
 				{
 					// Already deleted, ignore
-					logger.LogDebug("Task {TaskId} already deleted", task.Id);
+                  if (logger.IsEnabled(LogLevel.Debug))
+					{
+						logger.LogDebug("Task {TaskId} already deleted", task.Id);
+					}
 				}
 				catch (Exception ex)
 				{
@@ -228,12 +262,18 @@ public class TestDataManager(SolidtimeClient client, string organizationId, ILog
 				try
 				{
 					await _client.Tags.DeleteAsync(organizationId, tag.Id, cancellationToken);
-					logger.LogDebug("Deleted tag: {TagId}", tag.Id);
+                    if (logger.IsEnabled(LogLevel.Debug))
+					{
+						logger.LogDebug("Deleted tag: {TagId}", tag.Id);
+					}
 				}
 				catch (ApiException ex) when (ex.StatusCode == HttpStatusCode.NotFound)
 				{
 					// Already deleted, ignore
-					logger.LogDebug("Tag {TagId} already deleted", tag.Id);
+                 if (logger.IsEnabled(LogLevel.Debug))
+					{
+						logger.LogDebug("Tag {TagId} already deleted", tag.Id);
+					}
 				}
 				catch (Exception ex)
 				{
@@ -257,12 +297,18 @@ public class TestDataManager(SolidtimeClient client, string organizationId, ILog
 				try
 				{
 					await _client.Projects.DeleteAsync(organizationId, project.Id, cancellationToken);
-					logger.LogDebug("Deleted project: {ProjectId}", project.Id);
+                    if (logger.IsEnabled(LogLevel.Debug))
+					{
+						logger.LogDebug("Deleted project: {ProjectId}", project.Id);
+					}
 				}
 				catch (ApiException ex) when (ex.StatusCode == HttpStatusCode.NotFound)
 				{
 					// Already deleted, ignore
-					logger.LogDebug("Project {ProjectId} already deleted", project.Id);
+                 if (logger.IsEnabled(LogLevel.Debug))
+					{
+						logger.LogDebug("Project {ProjectId} already deleted", project.Id);
+					}
 				}
 				catch (Exception ex)
 				{
@@ -286,12 +332,18 @@ public class TestDataManager(SolidtimeClient client, string organizationId, ILog
 				try
 				{
 					await _client.Clients.DeleteAsync(organizationId, clientEntity.Id, cancellationToken);
-					logger.LogDebug("Deleted client: {ClientId}", clientEntity.Id);
+                 if (logger.IsEnabled(LogLevel.Debug))
+					{
+						logger.LogDebug("Deleted client: {ClientId}", clientEntity.Id);
+					}
 				}
 				catch (ApiException ex) when (ex.StatusCode == HttpStatusCode.NotFound)
 				{
 					// Already deleted, ignore
-					logger.LogDebug("Client {ClientId} already deleted", clientEntity.Id);
+                  if (logger.IsEnabled(LogLevel.Debug))
+					{
+						logger.LogDebug("Client {ClientId} already deleted", clientEntity.Id);
+					}
 				}
 				catch (Exception ex)
 				{

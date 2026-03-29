@@ -5,6 +5,12 @@ namespace Solidtime.Api.Models;
 /// </summary>
 public class PaginationLink
 {
+   /// <summary>
+	/// The page number represented by this link
+	/// </summary>
+	[JsonPropertyName("page")]
+	public int? Page { get; set; }
+
 	/// <summary>
 	/// The URL for this page
 	/// </summary>
