@@ -24,13 +24,13 @@ public class TestDataManager(SolidtimeClient client, string organizationId, ILog
 
 		try
 		{
-			// Use timestamp to ensure unique names
-			var timestamp = DateTimeOffset.UtcNow.ToString("yyyyMMdd-HHmmss", System.Globalization.CultureInfo.InvariantCulture);
+         // Use timestamp plus a GUID suffix to ensure unique names across repeated runs.
+           var uniqueSuffix = $"{DateTimeOffset.UtcNow:yyyyMMdd-HHmmss}-{Guid.NewGuid():N}"[..27];
 
 			// Create a sample client for tests
 			var clientRequest = new ClientStoreRequest
 			{
-				Name = $"TestClient-{timestamp}"
+                Name = $"TestClient-{uniqueSuffix}"
 			};
 
 			var clientResult = await _client.Clients.CreateAsync(organizationId, clientRequest, cancellationToken);
@@ -44,7 +44,7 @@ public class TestDataManager(SolidtimeClient client, string organizationId, ILog
 			// Note: Using lowercase Material Design color (from user's color palette)
 			var projectRequest = new ProjectStoreRequest
 			{
-				Name = $"TestProject-{timestamp}",
+              Name = $"TestProject-{uniqueSuffix}",
 				Color = "#ef5350",  // Material Red 400 - confirmed working by user
 				ClientId = SampleClientId,
 				IsBillable = false
@@ -60,7 +60,7 @@ public class TestDataManager(SolidtimeClient client, string organizationId, ILog
 			// Create a sample tag for tests
 			var tagRequest = new TagStoreRequest
 			{
-				Name = $"TestTag-{timestamp}"
+               Name = $"TestTag-{uniqueSuffix}"
 			};
 
 			var tagResult = await _client.Tags.CreateAsync(organizationId, tagRequest, cancellationToken);

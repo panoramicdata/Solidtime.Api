@@ -119,8 +119,8 @@ public partial class AuthenticatedBackingOffHttpClientHandler : DelegatingHandle
 			LogRetryAttempt(attempt, MaxRetries);
 		}
 
-		LogRequestMethod(request.Method.ToString());
-		LogRequestUri(request.RequestUri?.ToString() ?? string.Empty);
+        _logger.LogDebug("│ Method: {Method}", request.Method);
+		_logger.LogDebug("│ URI: {Uri}", request.RequestUri);
 
 		LogRequestHeaders(request);
 
@@ -137,7 +137,7 @@ public partial class AuthenticatedBackingOffHttpClientHandler : DelegatingHandle
 	/// </summary>
 	private void LogRequestHeaders(HttpRequestMessage request)
 	{
-		if (!request.Headers.Any())
+     if (!_logger.IsEnabled(LogLevel.Debug) || !request.Headers.Any())
 		{
 			return;
 		}
@@ -151,7 +151,7 @@ public partial class AuthenticatedBackingOffHttpClientHandler : DelegatingHandle
 			}
 			else
 			{
-				LogRequestHeader(header.Key, string.Join(", ", header.Value));
+              _logger.LogDebug("│   {HeaderName}: {HeaderValue}", header.Key, string.Join(", ", header.Value));
 			}
 		}
 	}
@@ -201,7 +201,7 @@ public partial class AuthenticatedBackingOffHttpClientHandler : DelegatingHandle
 	/// </summary>
 	private void LogResponseHeaders(HttpResponseMessage response)
 	{
-		if (!response.Headers.Any() && response.Content?.Headers.Count() == 0)
+      if (!_logger.IsEnabled(LogLevel.Debug) || (!response.Headers.Any() && response.Content?.Headers.Count() == 0))
 		{
 			return;
 		}
@@ -209,14 +209,14 @@ public partial class AuthenticatedBackingOffHttpClientHandler : DelegatingHandle
 		LogResponseHeadersStart();
 		foreach (var header in response.Headers)
 		{
-			LogResponseHeader(header.Key, string.Join(", ", header.Value));
+         _logger.LogDebug("│   {HeaderName}: {HeaderValue}", header.Key, string.Join(", ", header.Value));
 		}
 
 		if (response.Content?.Headers != null)
 		{
 			foreach (var header in response.Content.Headers)
 			{
-				LogResponseHeader(header.Key, string.Join(", ", header.Value));
+             _logger.LogDebug("│   {HeaderName}: {HeaderValue}", header.Key, string.Join(", ", header.Value));
 			}
 		}
 	}
@@ -354,20 +354,11 @@ public partial class AuthenticatedBackingOffHttpClientHandler : DelegatingHandle
 	[LoggerMessage(Level = LogLevel.Debug, Message = "│ Retry attempt {attempt} of {maxRetries}")]
 	private partial void LogRetryAttempt(int attempt, int maxRetries);
 
-	[LoggerMessage(Level = LogLevel.Debug, Message = "│ Method: {method}")]
-	private partial void LogRequestMethod(string method);
-
-	[LoggerMessage(Level = LogLevel.Debug, Message = "│ URI: {uri}")]
-	private partial void LogRequestUri(string uri);
-
 	[LoggerMessage(Level = LogLevel.Debug, Message = "│ Headers:")]
 	private partial void LogRequestHeadersStart();
 
 	[LoggerMessage(Level = LogLevel.Debug, Message = "│   {headerName}: Bearer ***REDACTED***")]
 	private partial void LogRequestHeaderRedacted(string headerName);
-
-	[LoggerMessage(Level = LogLevel.Debug, Message = "│   {headerName}: {headerValue}")]
-	private partial void LogRequestHeader(string headerName, string headerValue);
 
 	[LoggerMessage(Level = LogLevel.Debug, Message = "│ Body: {requestBody}")]
 	private partial void LogRequestBody(string requestBody);
@@ -383,9 +374,6 @@ public partial class AuthenticatedBackingOffHttpClientHandler : DelegatingHandle
 
 	[LoggerMessage(Level = LogLevel.Debug, Message = "│ Headers:")]
 	private partial void LogResponseHeadersStart();
-
-	[LoggerMessage(Level = LogLevel.Debug, Message = "│   {headerName}: {headerValue}")]
-	private partial void LogResponseHeader(string headerName, string headerValue);
 
 	[LoggerMessage(Level = LogLevel.Debug, Message = "│ Body: {responseBody}")]
 	private partial void LogResponseBody(string responseBody);
