@@ -135,6 +135,8 @@ public class Fixture : TestBedFixture
 		}
 
 		_setupLock?.Dispose();
+
+		await base.DisposeAsyncCore();
 	}
 
 	/// <summary>

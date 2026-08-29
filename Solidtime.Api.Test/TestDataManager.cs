@@ -17,58 +17,19 @@ public class TestDataManager(SolidtimeClient client, string organizationId, ILog
 	/// </summary>
 	public async Task SetupTestDataAsync(CancellationToken cancellationToken)
 	{
-        if (logger.IsEnabled(LogLevel.Information))
+		if (logger.IsEnabled(LogLevel.Information))
 		{
 			logger.LogInformation("Setting up test data for organization {OrganizationId}", organizationId);
 		}
 
 		try
 		{
-         // Use timestamp plus a GUID suffix to ensure unique names across repeated runs.
-           var uniqueSuffix = $"{DateTimeOffset.UtcNow:yyyyMMdd-HHmmss}-{Guid.NewGuid():N}"[..27];
+			// Use timestamp plus a GUID suffix to ensure unique names across repeated runs.
+			var uniqueSuffix = $"{DateTimeOffset.UtcNow:yyyyMMdd-HHmmss}-{Guid.NewGuid():N}"[..27];
 
-			// Create a sample client for tests
-			var clientRequest = new ClientStoreRequest
-			{
-                Name = $"TestClient-{uniqueSuffix}"
-			};
-
-			var clientResult = await _client.Clients.CreateAsync(organizationId, clientRequest, cancellationToken);
-			SampleClientId = clientResult.Data.Id;
-         if (logger.IsEnabled(LogLevel.Information))
-			{
-				logger.LogInformation("Created sample client: {ClientId}", SampleClientId);
-			}
-
-			// Create a sample project for tests
-			// Note: Using lowercase Material Design color (from user's color palette)
-			var projectRequest = new ProjectStoreRequest
-			{
-              Name = $"TestProject-{uniqueSuffix}",
-				Color = "#ef5350",  // Material Red 400 - confirmed working by user
-				ClientId = SampleClientId,
-				IsBillable = false
-			};
-
-			var projectResult = await _client.Projects.CreateAsync(organizationId, projectRequest, cancellationToken);
-			SampleProjectId = projectResult.Data.Id;
-          if (logger.IsEnabled(LogLevel.Information))
-			{
-				logger.LogInformation("Created sample project: {ProjectId}", SampleProjectId);
-			}
-
-			// Create a sample tag for tests
-			var tagRequest = new TagStoreRequest
-			{
-               Name = $"TestTag-{uniqueSuffix}"
-			};
-
-			var tagResult = await _client.Tags.CreateAsync(organizationId, tagRequest, cancellationToken);
-			SampleTagId = tagResult.Data.Id;
-          if (logger.IsEnabled(LogLevel.Information))
-			{
-				logger.LogInformation("Created sample tag: {TagId}", SampleTagId);
-			}
+			await CreateSampleClientAsync(uniqueSuffix, cancellationToken);
+			await CreateSampleProjectAsync(uniqueSuffix, cancellationToken);
+			await CreateSampleTagAsync(uniqueSuffix, cancellationToken);
 
 			// Create sample time entries for chart tests
 			// Create entries over the last 4 weeks to ensure charts have data
@@ -80,6 +41,64 @@ public class TestDataManager(SolidtimeClient client, string organizationId, ILog
 		{
 			logger.LogError(ex, "Failed to setup test data");
 			throw;
+		}
+	}
+
+	/// <summary>
+	/// Creates the sample client used by tests
+	/// </summary>
+	private async Task CreateSampleClientAsync(string uniqueSuffix, CancellationToken cancellationToken)
+	{
+		var clientRequest = new ClientStoreRequest
+		{
+			Name = $"TestClient-{uniqueSuffix}"
+		};
+
+		var clientResult = await _client.Clients.CreateAsync(organizationId, clientRequest, cancellationToken);
+		SampleClientId = clientResult.Data.Id;
+		if (logger.IsEnabled(LogLevel.Information))
+		{
+			logger.LogInformation("Created sample client: {ClientId}", SampleClientId);
+		}
+	}
+
+	/// <summary>
+	/// Creates the sample project used by tests
+	/// </summary>
+	private async Task CreateSampleProjectAsync(string uniqueSuffix, CancellationToken cancellationToken)
+	{
+		// Note: Using lowercase Material Design color (from user's color palette)
+		var projectRequest = new ProjectStoreRequest
+		{
+			Name = $"TestProject-{uniqueSuffix}",
+			Color = "#ef5350",  // Material Red 400 - confirmed working by user
+			ClientId = SampleClientId,
+			IsBillable = false
+		};
+
+		var projectResult = await _client.Projects.CreateAsync(organizationId, projectRequest, cancellationToken);
+		SampleProjectId = projectResult.Data.Id;
+		if (logger.IsEnabled(LogLevel.Information))
+		{
+			logger.LogInformation("Created sample project: {ProjectId}", SampleProjectId);
+		}
+	}
+
+	/// <summary>
+	/// Creates the sample tag used by tests
+	/// </summary>
+	private async Task CreateSampleTagAsync(string uniqueSuffix, CancellationToken cancellationToken)
+	{
+		var tagRequest = new TagStoreRequest
+		{
+			Name = $"TestTag-{uniqueSuffix}"
+		};
+
+		var tagResult = await _client.Tags.CreateAsync(organizationId, tagRequest, cancellationToken);
+		SampleTagId = tagResult.Data.Id;
+		if (logger.IsEnabled(LogLevel.Information))
+		{
+			logger.LogInformation("Created sample tag: {TagId}", SampleTagId);
 		}
 	}
 
