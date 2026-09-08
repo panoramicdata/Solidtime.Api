@@ -170,27 +170,49 @@ public class TestDataManager(SolidtimeClient client, string organizationId, ILog
 	/// </summary>
 	public async Task CleanupAllTestDataAsync(CancellationToken cancellationToken)
 	{
-       if (logger.IsEnabled(LogLevel.Information))
+		if (logger.IsEnabled(LogLevel.Information))
 		{
 			logger.LogInformation("Cleaning up all test data for organization {OrganizationId}", organizationId);
 		}
 
 		try
 		{
-			// Clean up all time entries
-			await CleanupAllTimeEntriesAsync(cancellationToken);
+			// Ordered so that dependants go before the things they depend on: time entries and
+			// tasks reference projects, and projects reference clients.
+			await CleanupAllAsync(
+				"time entry",
+				ct => _client.TimeEntries.GetAsync(organizationId, null, null, ct),
+				(timeEntry, ct) => _client.TimeEntries.DeleteAsync(organizationId, timeEntry.Id, ct),
+				timeEntry => timeEntry.Id,
+				cancellationToken);
 
-			// Clean up all tasks
-			await CleanupAllTasksAsync(cancellationToken);
+			await CleanupAllAsync(
+				"task",
+				ct => _client.Tasks.GetAsync(organizationId, null, null, ct),
+				(task, ct) => _client.Tasks.DeleteAsync(organizationId, task.Id, ct),
+				task => task.Id,
+				cancellationToken);
 
-			// Clean up all tags
-			await CleanupAllTagsAsync(cancellationToken);
+			await CleanupAllAsync(
+				"tag",
+				ct => _client.Tags.GetAsync(organizationId, ct),
+				(tag, ct) => _client.Tags.DeleteAsync(organizationId, tag.Id, ct),
+				tag => tag.Id,
+				cancellationToken);
 
-			// Clean up all projects
-			await CleanupAllProjectsAsync(cancellationToken);
+			await CleanupAllAsync(
+				"project",
+				ct => _client.Projects.GetAsync(organizationId, null, null, ct),
+				(project, ct) => _client.Projects.DeleteAsync(organizationId, project.Id, ct),
+				project => project.Id,
+				cancellationToken);
 
-			// Clean up all clients
-			await CleanupAllClientsAsync(cancellationToken);
+			await CleanupAllAsync(
+				"client",
+				ct => _client.Clients.GetAsync(organizationId, null, null, ct),
+				(clientEntity, ct) => _client.Clients.DeleteAsync(organizationId, clientEntity.Id, ct),
+				clientEntity => clientEntity.Id,
+				cancellationToken);
 
 			logger.LogInformation("Test data cleanup completed");
 		}
@@ -201,178 +223,70 @@ public class TestDataManager(SolidtimeClient client, string organizationId, ILog
 		}
 	}
 
-	private async Task CleanupAllTimeEntriesAsync(CancellationToken cancellationToken)
+	/// <summary>
+	/// Deletes every entity of one kind, best effort. Failing to list them, or to delete any one
+	/// of them, is logged and does not stop the rest of the cleanup.
+	/// </summary>
+	/// <typeparam name="T">The entity type being cleaned up</typeparam>
+	/// <param name="entityType">The entity kind, for log messages</param>
+	/// <param name="getAllAsync">Lists the entities to delete</param>
+	/// <param name="deleteAsync">Deletes one entity</param>
+	/// <param name="getId">Reads an entity's ID, for log messages</param>
+	/// <param name="cancellationToken">Cancellation token</param>
+	private async Task CleanupAllAsync<T>(
+		string entityType,
+		Func<CancellationToken, Task<PaginatedResponse<T>>> getAllAsync,
+		Func<T, CancellationToken, Task> deleteAsync,
+		Func<T, string> getId,
+		CancellationToken cancellationToken)
 	{
+		PaginatedResponse<T> entities;
 		try
 		{
-			var timeEntries = await _client.TimeEntries.GetAsync(organizationId, null, null, cancellationToken);
-			foreach (var entry in timeEntries.Data)
-			{
-				try
-				{
-					await _client.TimeEntries.DeleteAsync(organizationId, entry.Id, cancellationToken);
-                 if (logger.IsEnabled(LogLevel.Debug))
-					{
-						logger.LogDebug("Deleted time entry: {TimeEntryId}", entry.Id);
-					}
-				}
-				catch (ApiException ex) when (ex.StatusCode == HttpStatusCode.NotFound)
-				{
-					// Already deleted, ignore
-                  if (logger.IsEnabled(LogLevel.Debug))
-					{
-						logger.LogDebug("Time entry {TimeEntryId} already deleted", entry.Id);
-					}
-				}
-				catch (Exception ex)
-				{
-					logger.LogWarning(ex, "Failed to delete time entry {TimeEntryId}", entry.Id);
-				}
-			}
+			entities = await getAllAsync(cancellationToken);
 		}
 		catch (Exception ex)
 		{
-			logger.LogWarning(ex, "Failed to retrieve time entries for cleanup");
+			logger.LogWarning(ex, "Failed to retrieve {EntityType} entities for cleanup", entityType);
+			return;
+		}
+
+		foreach (var entity in entities.Data)
+		{
+			await DeleteBestEffortAsync(entityType, entity, deleteAsync, getId, cancellationToken);
 		}
 	}
 
-	private async Task CleanupAllTasksAsync(CancellationToken cancellationToken)
+	/// <summary>
+	/// Deletes one entity, treating an already-deleted entity as success and logging any other
+	/// failure without rethrowing.
+	/// </summary>
+	private async Task DeleteBestEffortAsync<T>(
+		string entityType,
+		T entity,
+		Func<T, CancellationToken, Task> deleteAsync,
+		Func<T, string> getId,
+		CancellationToken cancellationToken)
 	{
 		try
 		{
-			var tasks = await _client.Tasks.GetAsync(organizationId, null, null, cancellationToken);
-			foreach (var task in tasks.Data)
+			await deleteAsync(entity, cancellationToken);
+			if (logger.IsEnabled(LogLevel.Debug))
 			{
-				try
-				{
-					await _client.Tasks.DeleteAsync(organizationId, task.Id, cancellationToken);
-                 if (logger.IsEnabled(LogLevel.Debug))
-					{
-						logger.LogDebug("Deleted task: {TaskId}", task.Id);
-					}
-				}
-				catch (ApiException ex) when (ex.StatusCode == HttpStatusCode.NotFound)
-				{
-					// Already deleted, ignore
-                  if (logger.IsEnabled(LogLevel.Debug))
-					{
-						logger.LogDebug("Task {TaskId} already deleted", task.Id);
-					}
-				}
-				catch (Exception ex)
-				{
-					logger.LogWarning(ex, "Failed to delete task {TaskId}", task.Id);
-				}
+				logger.LogDebug("Deleted {EntityType}: {EntityId}", entityType, getId(entity));
+			}
+		}
+		catch (ApiException ex) when (ex.StatusCode == HttpStatusCode.NotFound)
+		{
+			// Already deleted, ignore
+			if (logger.IsEnabled(LogLevel.Debug))
+			{
+				logger.LogDebug("{EntityType} {EntityId} already deleted", entityType, getId(entity));
 			}
 		}
 		catch (Exception ex)
 		{
-			logger.LogWarning(ex, "Failed to retrieve tasks for cleanup");
-		}
-	}
-
-	private async Task CleanupAllTagsAsync(CancellationToken cancellationToken)
-	{
-		try
-		{
-			var tags = await _client.Tags.GetAsync(organizationId, cancellationToken);
-			foreach (var tag in tags.Data)
-			{
-				try
-				{
-					await _client.Tags.DeleteAsync(organizationId, tag.Id, cancellationToken);
-                    if (logger.IsEnabled(LogLevel.Debug))
-					{
-						logger.LogDebug("Deleted tag: {TagId}", tag.Id);
-					}
-				}
-				catch (ApiException ex) when (ex.StatusCode == HttpStatusCode.NotFound)
-				{
-					// Already deleted, ignore
-                 if (logger.IsEnabled(LogLevel.Debug))
-					{
-						logger.LogDebug("Tag {TagId} already deleted", tag.Id);
-					}
-				}
-				catch (Exception ex)
-				{
-					logger.LogWarning(ex, "Failed to delete tag {TagId}", tag.Id);
-				}
-			}
-		}
-		catch (Exception ex)
-		{
-			logger.LogWarning(ex, "Failed to retrieve tags for cleanup");
-		}
-	}
-
-	private async Task CleanupAllProjectsAsync(CancellationToken cancellationToken)
-	{
-		try
-		{
-			var projects = await _client.Projects.GetAsync(organizationId, null, null, cancellationToken);
-			foreach (var project in projects.Data)
-			{
-				try
-				{
-					await _client.Projects.DeleteAsync(organizationId, project.Id, cancellationToken);
-                    if (logger.IsEnabled(LogLevel.Debug))
-					{
-						logger.LogDebug("Deleted project: {ProjectId}", project.Id);
-					}
-				}
-				catch (ApiException ex) when (ex.StatusCode == HttpStatusCode.NotFound)
-				{
-					// Already deleted, ignore
-                 if (logger.IsEnabled(LogLevel.Debug))
-					{
-						logger.LogDebug("Project {ProjectId} already deleted", project.Id);
-					}
-				}
-				catch (Exception ex)
-				{
-					logger.LogWarning(ex, "Failed to delete project {ProjectId}", project.Id);
-				}
-			}
-		}
-		catch (Exception ex)
-		{
-			logger.LogWarning(ex, "Failed to retrieve projects for cleanup");
-		}
-	}
-
-	private async Task CleanupAllClientsAsync(CancellationToken cancellationToken)
-	{
-		try
-		{
-			var clients = await _client.Clients.GetAsync(organizationId, null, null, cancellationToken);
-			foreach (var clientEntity in clients.Data)
-			{
-				try
-				{
-					await _client.Clients.DeleteAsync(organizationId, clientEntity.Id, cancellationToken);
-                 if (logger.IsEnabled(LogLevel.Debug))
-					{
-						logger.LogDebug("Deleted client: {ClientId}", clientEntity.Id);
-					}
-				}
-				catch (ApiException ex) when (ex.StatusCode == HttpStatusCode.NotFound)
-				{
-					// Already deleted, ignore
-                  if (logger.IsEnabled(LogLevel.Debug))
-					{
-						logger.LogDebug("Client {ClientId} already deleted", clientEntity.Id);
-					}
-				}
-				catch (Exception ex)
-				{
-					logger.LogWarning(ex, "Failed to delete client {ClientId}", clientEntity.Id);
-				}
-			}
-		}
-		catch (Exception ex)
-		{
-			logger.LogWarning(ex, "Failed to retrieve clients for cleanup");
+			logger.LogWarning(ex, "Failed to delete {EntityType} {EntityId}", entityType, getId(entity));
 		}
 	}
 

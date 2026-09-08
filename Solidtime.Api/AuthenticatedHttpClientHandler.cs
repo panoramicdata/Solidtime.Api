@@ -15,6 +15,7 @@ public partial class AuthenticatedBackingOffHttpClientHandler : DelegatingHandle
 {
 	private readonly SolidtimeClientOptions _options;
 	private readonly ILogger _logger;
+	private readonly HttpMessageLogger _messageLogger;
 	private const int MaxRetries = 3;
 	private const int InitialBackoffMs = 1000;
 
@@ -28,6 +29,7 @@ public partial class AuthenticatedBackingOffHttpClientHandler : DelegatingHandle
 		ArgumentNullException.ThrowIfNull(options);
 		_options = options;
 		_logger = options.Logger;
+		_messageLogger = new HttpMessageLogger(_logger);
 	}
 
 	/// <summary>
@@ -51,11 +53,11 @@ public partial class AuthenticatedBackingOffHttpClientHandler : DelegatingHandle
 			// Clone the request for potential retries (except on first attempt)
 			var requestToSend = attempt == 0 ? request : await CloneHttpRequestMessageAsync(request);
 
-			await LogRequestAsync(requestToSend, attempt, cancellationToken).ConfigureAwait(false);
+			await _messageLogger.LogRequestAsync(requestToSend, attempt, MaxRetries, cancellationToken).ConfigureAwait(false);
 
 			var response = await base.SendAsync(requestToSend, cancellationToken).ConfigureAwait(false);
 
-			await LogResponseAsync(response, cancellationToken).ConfigureAwait(false);
+			await _messageLogger.LogResponseAsync(response, cancellationToken).ConfigureAwait(false);
 
 			// Check if we got rate limited (429 Too Many Requests)
 			if (response.StatusCode == HttpStatusCode.TooManyRequests)
@@ -100,146 +102,6 @@ public partial class AuthenticatedBackingOffHttpClientHandler : DelegatingHandle
 		// Dispose the failed response before retrying
 		response.Dispose();
 		return true;
-	}
-
-	/// <summary>
-	/// Logs the HTTP request details if debug logging is enabled
-	/// </summary>
-	private async Task LogRequestAsync(HttpRequestMessage request, int attempt, CancellationToken cancellationToken)
-	{
-		if (!_logger.IsEnabled(LogLevel.Debug))
-		{
-			return;
-		}
-
-		LogRequestStart();
-
-		if (attempt > 0)
-		{
-			LogRetryAttempt(attempt, MaxRetries);
-		}
-
-        _logger.LogDebug("│ Method: {Method}", request.Method);
-		_logger.LogDebug("│ URI: {Uri}", request.RequestUri);
-
-		LogRequestHeaders(request);
-
-		if (request.Content != null)
-		{
-			await LogAndPreserveRequestContentAsync(request, cancellationToken).ConfigureAwait(false);
-		}
-
-		LogRequestEnd();
-	}
-
-	/// <summary>
-	/// Logs request headers, masking sensitive values
-	/// </summary>
-	private void LogRequestHeaders(HttpRequestMessage request)
-	{
-     if (!_logger.IsEnabled(LogLevel.Debug) || !request.Headers.Any())
-		{
-			return;
-		}
-
-		LogRequestHeadersStart();
-		foreach (var header in request.Headers)
-		{
-			if (header.Key.Equals("Authorization", StringComparison.OrdinalIgnoreCase))
-			{
-				LogRequestHeaderRedacted(header.Key);
-			}
-			else
-			{
-              _logger.LogDebug("│   {HeaderName}: {HeaderValue}", header.Key, string.Join(", ", header.Value));
-			}
-		}
-	}
-
-	/// <summary>
-	/// Logs request content and preserves it for sending
-	/// </summary>
-	private async Task LogAndPreserveRequestContentAsync(HttpRequestMessage request, CancellationToken cancellationToken)
-	{
-		var requestBody = await request.Content!.ReadAsStringAsync(cancellationToken).ConfigureAwait(false);
-		LogRequestBody(requestBody);
-
-		// Re-create the content so it can be sent
-		var encoding = request.Content.Headers.ContentType?.CharSet != null
-			? System.Text.Encoding.GetEncoding(request.Content.Headers.ContentType.CharSet)
-			: System.Text.Encoding.UTF8;
-		var mediaType = request.Content.Headers.ContentType?.MediaType ?? "application/json";
-
-		request.Content = new StringContent(requestBody, encoding, mediaType);
-	}
-
-	/// <summary>
-	/// Logs the HTTP response details if debug logging is enabled
-	/// </summary>
-	private async Task LogResponseAsync(HttpResponseMessage response, CancellationToken cancellationToken)
-	{
-		if (!_logger.IsEnabled(LogLevel.Debug))
-		{
-			return;
-		}
-
-		LogResponseStart();
-		LogResponseStatus((int)response.StatusCode, response.ReasonPhrase ?? string.Empty);
-
-		LogResponseHeaders(response);
-
-		if (response.Content != null)
-		{
-			await LogAndPreserveResponseContentAsync(response, cancellationToken).ConfigureAwait(false);
-		}
-
-		LogResponseEnd();
-	}
-
-	/// <summary>
-	/// Logs response headers
-	/// </summary>
-	private void LogResponseHeaders(HttpResponseMessage response)
-	{
-      if (!_logger.IsEnabled(LogLevel.Debug) || (!response.Headers.Any() && response.Content?.Headers.Count() == 0))
-		{
-			return;
-		}
-
-		LogResponseHeadersStart();
-		foreach (var header in response.Headers)
-		{
-         _logger.LogDebug("│   {HeaderName}: {HeaderValue}", header.Key, string.Join(", ", header.Value));
-		}
-
-		if (response.Content?.Headers != null)
-		{
-			foreach (var header in response.Content.Headers)
-			{
-             _logger.LogDebug("│   {HeaderName}: {HeaderValue}", header.Key, string.Join(", ", header.Value));
-			}
-		}
-	}
-
-	/// <summary>
-	/// Logs response content and preserves it for reading by Refit
-	/// </summary>
-	private async Task LogAndPreserveResponseContentAsync(HttpResponseMessage response, CancellationToken cancellationToken)
-	{
-		var responseBody = await response.Content!.ReadAsStringAsync(cancellationToken).ConfigureAwait(false);
-
-		if (!string.IsNullOrWhiteSpace(responseBody))
-		{
-			LogResponseBody(responseBody);
-		}
-
-		// Re-wrap the content so it can be read again by Refit
-		var encoding = response.Content.Headers.ContentType?.CharSet != null
-			? System.Text.Encoding.GetEncoding(response.Content.Headers.ContentType.CharSet)
-			: System.Text.Encoding.UTF8;
-		var mediaType = response.Content.Headers.ContentType?.MediaType ?? "application/json";
-
-		response.Content = new StringContent(responseBody, encoding, mediaType);
 	}
 
 	/// <summary>
@@ -346,40 +208,6 @@ public partial class AuthenticatedBackingOffHttpClientHandler : DelegatingHandle
 
 		return clone;
 	}
-
-	// LoggerMessage delegates for high-performance logging
-	[LoggerMessage(Level = LogLevel.Debug, Message = "┌─ HTTP Request ─────────────────────────────────")]
-	private partial void LogRequestStart();
-
-	[LoggerMessage(Level = LogLevel.Debug, Message = "│ Retry attempt {attempt} of {maxRetries}")]
-	private partial void LogRetryAttempt(int attempt, int maxRetries);
-
-	[LoggerMessage(Level = LogLevel.Debug, Message = "│ Headers:")]
-	private partial void LogRequestHeadersStart();
-
-	[LoggerMessage(Level = LogLevel.Debug, Message = "│   {headerName}: Bearer ***REDACTED***")]
-	private partial void LogRequestHeaderRedacted(string headerName);
-
-	[LoggerMessage(Level = LogLevel.Debug, Message = "│ Body: {requestBody}")]
-	private partial void LogRequestBody(string requestBody);
-
-	[LoggerMessage(Level = LogLevel.Debug, Message = "└────────────────────────────────────────────────")]
-	private partial void LogRequestEnd();
-
-	[LoggerMessage(Level = LogLevel.Debug, Message = "┌─ HTTP Response ────────────────────────────────")]
-	private partial void LogResponseStart();
-
-	[LoggerMessage(Level = LogLevel.Debug, Message = "│ Status: {statusCode} {reasonPhrase}")]
-	private partial void LogResponseStatus(int statusCode, string reasonPhrase);
-
-	[LoggerMessage(Level = LogLevel.Debug, Message = "│ Headers:")]
-	private partial void LogResponseHeadersStart();
-
-	[LoggerMessage(Level = LogLevel.Debug, Message = "│ Body: {responseBody}")]
-	private partial void LogResponseBody(string responseBody);
-
-	[LoggerMessage(Level = LogLevel.Debug, Message = "└────────────────────────────────────────────────")]
-	private partial void LogResponseEnd();
 
 	[LoggerMessage(Level = LogLevel.Warning, Message = "Rate limit exceeded (429), backing off for {seconds} seconds")]
 	private partial void LogRateLimitBackoff(double seconds);
