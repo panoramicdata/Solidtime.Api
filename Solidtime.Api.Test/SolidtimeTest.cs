@@ -218,6 +218,41 @@ public class SolidtimeTest : TestBed<Fixture>
 	}
 
 	/// <summary>
+	/// Resolves the organization ID and invokes an organization-scoped endpoint with it.
+	/// Every organization-scoped test needs the same two steps, so they are expressed once here.
+	/// </summary>
+	/// <typeparam name="T">The type returned by the endpoint</typeparam>
+	/// <param name="call">The endpoint to invoke</param>
+	/// <returns>The endpoint's result</returns>
+	protected async Task<T> ForOrganizationAsync<T>(Func<string, CancellationToken, Task<T>> call)
+	{
+		ArgumentNullException.ThrowIfNull(call);
+
+		var organizationId = await GetOrganizationIdAsync();
+		return await call(organizationId, CancellationToken);
+	}
+
+	/// <summary>
+	/// Gets a sample project ID, or null when the organization has no projects.
+	/// Tests that need a project but cannot create one use this to skip their assertions
+	/// rather than fail against an organization that happens to be empty.
+	/// </summary>
+	/// <param name="whatCannotBeVerified">What the test is unable to verify without a project</param>
+	/// <returns>The project ID, or null when no project is available</returns>
+	protected async Task<string?> TryGetProjectIdAsync(string whatCannotBeVerified)
+	{
+		try
+		{
+			return await GetProjectIdAsync();
+		}
+		catch (InvalidOperationException ex)
+		{
+			Logger.LogWarning(ex, "No projects found in organization - test cannot verify {WhatCannotBeVerified}", whatCannotBeVerified);
+			return null;
+		}
+	}
+
+	/// <summary>
 	/// Safely executes a delete operation, ignoring errors if the resource was already deleted
 	/// </summary>
 	/// <param name="deleteAction">The delete action to execute</param>
