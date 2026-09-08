@@ -12,9 +12,7 @@ public class ApiTokenTests(ITestOutputHelper testOutputHelper, Fixture fixture)
 	[Fact]
 	public async Task ApiTokens_Get_Succeeds()
 	{
-		var result = await SolidtimeClient
-			.ApiTokens
-			.GetAsync(CancellationToken);
+		var result = await SolidtimeClient.ApiTokens.GetAsync(CancellationToken);
 
 		result.Should().NotBeNull();
 		result.Data.Should().NotBeNull();
@@ -26,22 +24,14 @@ public class ApiTokenTests(ITestOutputHelper testOutputHelper, Fixture fixture)
 	[Fact]
 	public async Task ApiTokens_CreateAndRevoke_Succeeds()
 	{
-		string? tokenId = null;
-		try
+		var createRequest = new ApiTokenStoreRequest
 		{
-			// Create a test token
-			var createRequest = new ApiTokenStoreRequest
-			{
-				Name = $"Test Token {Guid.NewGuid()}",
-				ExpiresAt = DateTimeOffset.UtcNow.AddDays(7)
-			};
+			Name = $"Test Token {Guid.NewGuid()}",
+			ExpiresAt = DateTimeOffset.UtcNow.AddDays(7)
+		};
 
-			var createResult = await SolidtimeClient
-				.ApiTokens
-				.CreateAsync(createRequest, CancellationToken);
-
-			createResult.Should().NotBeNull();
-			createResult.Data.Should().NotBeNull();
+		await CreateTokenThenRevokeAsync(createRequest, async createResult =>
+		{
 			createResult.Data.Name.Should().Be(createRequest.Name);
 			createResult.Data.Id.Should().NotBeNullOrWhiteSpace();
 
@@ -51,37 +41,13 @@ public class ApiTokenTests(ITestOutputHelper testOutputHelper, Fixture fixture)
 			// ExpiresAt should be set
 			createResult.Data.ExpiresAt.Should().NotBeNull();
 
-			tokenId = createResult.Data.Id;
+			var tokenId = createResult.Data.Id;
+			await SolidtimeClient.ApiTokens.RevokeAsync(tokenId, CancellationToken);
 
-			// Revoke the token
-			await SolidtimeClient
-				.ApiTokens
-				.RevokeAsync(tokenId, CancellationToken);
-
-			// Verify it was deleted by getting all tokens
-			var allTokens = await SolidtimeClient
-				.ApiTokens
-				.GetAsync(CancellationToken);
-
-			allTokens.Data.Should().NotContain(t => t.Id == tokenId);
-		}
-		finally
-		{
-			// Ensure cleanup even if test fails
-			if (tokenId != null)
-			{
-				try
-				{
-					await SolidtimeClient
-						.ApiTokens
-						.RevokeAsync(tokenId, CancellationToken);
-				}
-				catch
-				{
-					// Token may already be revoked, ignore errors
-				}
-			}
-		}
+			// Verify it was revoked by getting all tokens
+			var allTokens = await SolidtimeClient.ApiTokens.GetAsync(CancellationToken);
+			allTokens.Data.Should().NotContain(token => token.Id == tokenId);
+		});
 	}
 
 	/// <summary>
@@ -90,48 +56,37 @@ public class ApiTokenTests(ITestOutputHelper testOutputHelper, Fixture fixture)
 	[Fact]
 	public async Task ApiTokens_CreateWithoutExpiration_Succeeds()
 	{
-		string? tokenId = null;
-		try
+		// No expiration is specified - the API provides a default
+		var createRequest = new ApiTokenStoreRequest { Name = $"No Expiry Token {Guid.NewGuid()}" };
+
+		await CreateTokenThenRevokeAsync(createRequest, createResult =>
 		{
-			// Create a token without expiration (API will provide a default)
-			var createRequest = new ApiTokenStoreRequest
-			{
-				Name = $"No Expiry Token {Guid.NewGuid()}"
-			};
-
-			var createResult = await SolidtimeClient
-				.ApiTokens
-				.CreateAsync(createRequest, CancellationToken);
-
-			createResult.Should().NotBeNull();
-			createResult.Data.Should().NotBeNull();
 			createResult.Data.Name.Should().Be(createRequest.Name);
-			// API provides a default expiry even when none is specified
+
+			// The API provides a default expiry even when none is specified
 			createResult.Data.ExpiresAt.Should().NotBeNull();
 
-			tokenId = createResult.Data.Id;
-
-			// Clean up
-			await SolidtimeClient
-				.ApiTokens
-				.RevokeAsync(tokenId, CancellationToken);
-		}
-		finally
-		{
-			// Ensure cleanup even if test fails
-			if (tokenId != null)
-			{
-				try
-				{
-					await SolidtimeClient
-						.ApiTokens
-						.RevokeAsync(tokenId, CancellationToken);
-				}
-				catch
-				{
-					// Token may already be revoked, ignore errors
-				}
-			}
-		}
+			return Task.CompletedTask;
+		});
 	}
+
+	/// <summary>
+	/// Creates an API token, runs the given assertions against it, and revokes it afterwards
+	/// however the assertions end. Revoking an already-revoked token is ignored.
+	/// </summary>
+	/// <param name="createRequest">The token to create</param>
+	/// <param name="body">The assertions to run against the created token</param>
+	private Task CreateTokenThenRevokeAsync(
+		ApiTokenStoreRequest createRequest,
+		Func<DataWrapper<ApiTokenCreated>, Task> body)
+		=> CreateThenCleanupAsync(
+			async () =>
+			{
+				var createResult = await SolidtimeClient.ApiTokens.CreateAsync(createRequest, CancellationToken);
+				createResult.Should().NotBeNull();
+				createResult.Data.Should().NotBeNull();
+				return createResult;
+			},
+			created => SolidtimeClient.ApiTokens.RevokeAsync(created.Data.Id, CancellationToken),
+			body);
 }

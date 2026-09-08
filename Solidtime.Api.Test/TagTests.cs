@@ -12,14 +12,9 @@ public class TagTests(ITestOutputHelper testOutputHelper, Fixture fixture)
 	[Fact]
 	public async Task Tags_Get_Succeeds()
 	{
-		var organizationId = await GetOrganizationIdAsync();
+		var result = await GetTagsAsync();
 
-		var result = await SolidtimeClient
-			.Tags
-			.GetAsync(organizationId, CancellationToken);
-
-		result.Should().NotBeNull();
-		result.Data.Should().NotBeNull();
+		Verify.PaginatedEnvelope(result);
 	}
 
 	/// <summary>
@@ -29,43 +24,37 @@ public class TagTests(ITestOutputHelper testOutputHelper, Fixture fixture)
 	public async Task Tags_CreateUpdateDelete_Succeeds()
 	{
 		var organizationId = await GetOrganizationIdAsync();
-		string? tagId = null;
 
-		try
-		{
-			// Create
-			var createRequest = new TagStoreRequest { Name = $"Test Tag {Guid.NewGuid()}" };
-			var createResult = await SolidtimeClient.Tags.CreateAsync(organizationId, createRequest, CancellationToken);
+		var createRequest = new TagStoreRequest { Name = $"Test Tag {Guid.NewGuid()}" };
 
-			createResult.Should().NotBeNull();
-			createResult.Data.Name.Should().Be(createRequest.Name);
-			createResult.Data.Id.Should().NotBeNullOrWhiteSpace();
-			tagId = createResult.Data.Id;
-
-			// Verify creation
-			var allTags = await SolidtimeClient.Tags.GetAsync(organizationId, CancellationToken);
-			allTags.Data.Should().Contain(t => t.Id == tagId);
-			allTags.Data.First(t => t.Id == tagId).Name.Should().Be(createRequest.Name);
-
-			// Update
-			var updateRequest = new TagUpdateRequest { Name = $"Updated Tag {Guid.NewGuid()}" };
-			var updateResult = await SolidtimeClient.Tags.UpdateAsync(organizationId, tagId, updateRequest, CancellationToken);
-
-			updateResult.Should().NotBeNull();
-			updateResult.Data.Name.Should().Be(updateRequest.Name);
-
-			// Delete and verify
-			await SolidtimeClient.Tags.DeleteAsync(organizationId, tagId, CancellationToken);
-			var afterDelete = await SolidtimeClient.Tags.GetAsync(organizationId, CancellationToken);
-			afterDelete.Data.Should().NotContain(t => t.Id == tagId);
-		}
-		finally
-		{
-			if (tagId != null)
+		await CreateThenCleanupAsync(
+			() => SolidtimeClient.Tags.CreateAsync(organizationId, createRequest, CancellationToken),
+			created => SolidtimeClient.Tags.DeleteAsync(organizationId, created.Data.Id, CancellationToken),
+			async createResult =>
 			{
-				await SafeDeleteAsync(() => SolidtimeClient.Tags.DeleteAsync(organizationId, tagId, CancellationToken));
-			}
-		}
+				createResult.Should().NotBeNull();
+				createResult.Data.Name.Should().Be(createRequest.Name);
+				createResult.Data.Id.Should().NotBeNullOrWhiteSpace();
+
+				var tagId = createResult.Data.Id;
+
+				// Verify creation
+				var allTags = await GetTagsAsync();
+				allTags.Data.Should().Contain(tag => tag.Id == tagId);
+				allTags.Data.First(tag => tag.Id == tagId).Name.Should().Be(createRequest.Name);
+
+				// Update
+				var updateRequest = new TagUpdateRequest { Name = $"Updated Tag {Guid.NewGuid()}" };
+				var updateResult = await SolidtimeClient.Tags.UpdateAsync(organizationId, tagId, updateRequest, CancellationToken);
+
+				updateResult.Should().NotBeNull();
+				updateResult.Data.Name.Should().Be(updateRequest.Name);
+
+				// Delete and verify
+				await SolidtimeClient.Tags.DeleteAsync(organizationId, tagId, CancellationToken);
+				var afterDelete = await GetTagsAsync();
+				afterDelete.Data.Should().NotContain(tag => tag.Id == tagId);
+			});
 	}
 
 	/// <summary>
@@ -74,21 +63,14 @@ public class TagTests(ITestOutputHelper testOutputHelper, Fixture fixture)
 	[Fact]
 	public async Task Tags_Get_HasValidTimestamps()
 	{
-		var organizationId = await GetOrganizationIdAsync();
-
-		var result = await SolidtimeClient
-			.Tags
-			.GetAsync(organizationId, CancellationToken);
+		var result = await GetTagsAsync();
 
 		if (result.Data.Count != 0)
 		{
-			var tag = result.Data.First();
-			tag.CreatedAt.Should().NotBeNull();
-			tag.CreatedAt!.Value.Should().BeBefore(DateTimeOffset.UtcNow);
-
-			tag.UpdatedAt.Should().NotBeNull();
-			tag.UpdatedAt!.Value.Should().BeBefore(DateTimeOffset.UtcNow);
-			tag.UpdatedAt.Value.Should().BeOnOrAfter(tag.CreatedAt.Value);
+			Verify.Timestamps(result.Data.First());
 		}
 	}
+
+	private Task<PaginatedResponse<Tag>> GetTagsAsync()
+		=> ForOrganizationAsync(SolidtimeClient.Tags.GetAsync);
 }

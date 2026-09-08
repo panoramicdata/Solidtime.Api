@@ -12,16 +12,9 @@ public class TaskTests(ITestOutputHelper testOutputHelper, Fixture fixture)
 	[Fact]
 	public async Task Tasks_Get_Succeeds()
 	{
-		var organizationId = await GetOrganizationIdAsync();
+		var result = await GetTasksAsync();
 
-		var result = await SolidtimeClient
-			.Tasks
-			.GetAsync(organizationId, null, null, CancellationToken);
-
-		result.Should().NotBeNull();
-		result.Data.Should().NotBeNull();
-		result.Meta.Should().NotBeNull();
-		// Links may be null when the result set is empty
+		Verify.PaginatedEnvelopeWithMeta(result);
 	}
 
 	/// <summary>
@@ -32,54 +25,45 @@ public class TaskTests(ITestOutputHelper testOutputHelper, Fixture fixture)
 	{
 		var organizationId = await GetOrganizationIdAsync();
 
-		// Try to get a project ID - test will be inconclusive if no projects exist
-		string? projectId;
-		try { projectId = await GetProjectIdAsync(); }
-		catch (InvalidOperationException ex)
+		var projectId = await TryGetProjectIdAsync("task create, update and delete");
+		if (projectId is null)
 		{
-			Logger.LogWarning(ex, "No projects found - test cannot verify task CRUD");
 			return;
 		}
 
-		string? taskId = null;
-		try
-		{
-			// Create
-			var createRequest = new TaskStoreRequest { Name = $"Test Task {Guid.NewGuid()}", ProjectId = projectId };
-			var createResult = await SolidtimeClient.Tasks.CreateAsync(organizationId, createRequest, CancellationToken);
+		var createRequest = new TaskStoreRequest { Name = $"Test Task {Guid.NewGuid()}", ProjectId = projectId };
 
-			createResult.Should().NotBeNull();
-			createResult.Data.Name.Should().Be(createRequest.Name);
-			createResult.Data.Id.Should().NotBeNullOrWhiteSpace();
-			createResult.Data.ProjectId.Should().Be(projectId);
-			createResult.Data.IsDone.Should().BeFalse();
-			taskId = createResult.Data.Id;
-
-			// Update
-			var updateRequest = new TaskUpdateRequest { Name = $"Updated Task {Guid.NewGuid()}" };
-			var updateResult = await SolidtimeClient.Tasks.UpdateAsync(organizationId, taskId, updateRequest, CancellationToken);
-
-			updateResult.Should().NotBeNull();
-			updateResult.Data.Id.Should().Be(taskId);
-			updateResult.Data.Name.Should().Be(updateRequest.Name);
-
-			// Mark as done
-			var doneRequest = new TaskUpdateRequest { Name = updateRequest.Name, IsDone = true };
-			var doneResult = await SolidtimeClient.Tasks.UpdateAsync(organizationId, taskId, doneRequest, CancellationToken);
-			doneResult.Data.IsDone.Should().BeTrue();
-
-			// Delete and verify
-			await SolidtimeClient.Tasks.DeleteAsync(organizationId, taskId, CancellationToken);
-			var allTasks = await SolidtimeClient.Tasks.GetAsync(organizationId, null, null, CancellationToken);
-			allTasks.Data.Should().NotContain(t => t.Id == taskId);
-		}
-		finally
-		{
-			if (taskId != null)
+		await CreateThenCleanupAsync(
+			() => SolidtimeClient.Tasks.CreateAsync(organizationId, createRequest, CancellationToken),
+			created => SolidtimeClient.Tasks.DeleteAsync(organizationId, created.Data.Id, CancellationToken),
+			async createResult =>
 			{
-				await SafeDeleteAsync(() => SolidtimeClient.Tasks.DeleteAsync(organizationId, taskId, CancellationToken));
-			}
-		}
+				createResult.Should().NotBeNull();
+				createResult.Data.Name.Should().Be(createRequest.Name);
+				createResult.Data.Id.Should().NotBeNullOrWhiteSpace();
+				createResult.Data.ProjectId.Should().Be(projectId);
+				createResult.Data.IsDone.Should().BeFalse();
+
+				var taskId = createResult.Data.Id;
+
+				// Update
+				var updateRequest = new TaskUpdateRequest { Name = $"Updated Task {Guid.NewGuid()}" };
+				var updateResult = await SolidtimeClient.Tasks.UpdateAsync(organizationId, taskId, updateRequest, CancellationToken);
+
+				updateResult.Should().NotBeNull();
+				updateResult.Data.Id.Should().Be(taskId);
+				updateResult.Data.Name.Should().Be(updateRequest.Name);
+
+				// Mark as done
+				var doneRequest = new TaskUpdateRequest { Name = updateRequest.Name, IsDone = true };
+				var doneResult = await SolidtimeClient.Tasks.UpdateAsync(organizationId, taskId, doneRequest, CancellationToken);
+				doneResult.Data.IsDone.Should().BeTrue();
+
+				// Delete and verify
+				await SolidtimeClient.Tasks.DeleteAsync(organizationId, taskId, CancellationToken);
+				var allTasks = await GetTasksAsync();
+				allTasks.Data.Should().NotContain(task => task.Id == taskId);
+			});
 	}
 
 	/// <summary>
@@ -88,20 +72,12 @@ public class TaskTests(ITestOutputHelper testOutputHelper, Fixture fixture)
 	[Fact]
 	public async Task Tasks_Filtering_Works()
 	{
-		var organizationId = await GetOrganizationIdAsync();
+		// Note: The tasks endpoint does not support page/per_page parameters according to the
+		// OpenAPI spec. It only supports project_id and done filters, and the API returns
+		// pagination metadata using its own default page size (500).
+		var result = await GetTasksAsync();
 
-		// Test basic retrieval
-		var result = await SolidtimeClient
-			.Tasks
-			.GetAsync(organizationId, null, null, CancellationToken);
-
-		result.Should().NotBeNull();
-		result.Meta.Should().NotBeNull();
-		result.Data.Should().NotBeNull();
-
-		// Note: The tasks endpoint does not support page/per_page parameters according to the OpenAPI spec
-		// It only supports project_id and done filters
-		// The API returns pagination metadata but uses its own default page size (500)
+		Verify.PaginatedEnvelopeWithMeta(result);
 	}
 
 	/// <summary>
@@ -110,21 +86,15 @@ public class TaskTests(ITestOutputHelper testOutputHelper, Fixture fixture)
 	[Fact]
 	public async Task Tasks_Get_HasValidTimestamps()
 	{
-		var organizationId = await GetOrganizationIdAsync();
-
-		var result = await SolidtimeClient
-			.Tasks
-			.GetAsync(organizationId, null, null, CancellationToken);
+		var result = await GetTasksAsync();
 
 		if (result.Data.Count != 0)
 		{
-			var task = result.Data.First();
-			task.CreatedAt.Should().NotBeNull();
-			task.CreatedAt!.Value.Should().BeBefore(DateTimeOffset.UtcNow);
-			task.UpdatedAt.Should().NotBeNull();
-			task.UpdatedAt!.Value.Should().BeBefore(DateTimeOffset.UtcNow);
-			task.UpdatedAt.Value.Should().BeOnOrAfter(task.CreatedAt.Value);
+			Verify.Timestamps(result.Data.First());
 		}
 	}
-}
 
+	private Task<PaginatedResponse<TaskModel>> GetTasksAsync()
+		=> ForOrganizationAsync((organizationId, cancellationToken)
+			=> SolidtimeClient.Tasks.GetAsync(organizationId, null, null, cancellationToken));
+}

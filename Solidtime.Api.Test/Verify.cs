@@ -8,7 +8,7 @@ namespace Solidtime.Api.Test;
 internal static class Verify
 {
 	/// <summary>
-	/// Asserts that a paginated envelope carries data and pagination metadata.
+	/// Asserts that a paginated envelope carries data.
 	/// Links are deliberately not asserted: the API omits them when the result set is empty.
 	/// </summary>
 	/// <typeparam name="T">The type of the items in the envelope</typeparam>
@@ -17,6 +17,17 @@ internal static class Verify
 	{
 		result.Should().NotBeNull();
 		result.Data.Should().NotBeNull();
+	}
+
+	/// <summary>
+	/// Asserts that a paginated envelope carries data and pagination metadata.
+	/// Only for the endpoints that populate meta; several endpoints leave it out entirely.
+	/// </summary>
+	/// <typeparam name="T">The type of the items in the envelope</typeparam>
+	/// <param name="result">The paginated response to check</param>
+	internal static void PaginatedEnvelopeWithMeta<T>(PaginatedResponse<T> result)
+	{
+		PaginatedEnvelope(result);
 		result.Meta.Should().NotBeNull();
 	}
 

@@ -12,16 +12,9 @@ public class MemberTests(ITestOutputHelper testOutputHelper, Fixture fixture)
 	[Fact]
 	public async Task Members_Get_Succeeds()
 	{
-		var organizationId = await GetOrganizationIdAsync();
+		var result = await ForOrganizationAsync(SolidtimeClient.Members.GetAsync);
 
-		var result = await SolidtimeClient
-			.Members
-			.GetAsync(organizationId, CancellationToken);
-
-		result.Should().NotBeNull();
-		result.Data.Should().NotBeNull();
-		result.Meta.Should().NotBeNull();
-		// Links may be null when the result set is empty
+		Verify.PaginatedEnvelopeWithMeta(result);
 	}
 
 	/// <summary>
@@ -30,11 +23,7 @@ public class MemberTests(ITestOutputHelper testOutputHelper, Fixture fixture)
 	[Fact]
 	public async Task Members_Get_HasValidData()
 	{
-		var organizationId = await GetOrganizationIdAsync();
-
-		var result = await SolidtimeClient
-			.Members
-			.GetAsync(organizationId, CancellationToken);
+		var result = await ForOrganizationAsync(SolidtimeClient.Members.GetAsync);
 
 		if (result.Data.Count != 0)
 		{
@@ -53,22 +42,15 @@ public class MemberTests(ITestOutputHelper testOutputHelper, Fixture fixture)
 	[Fact]
 	public async Task Members_Get_HasPaginationMetadata()
 	{
-		var organizationId = await GetOrganizationIdAsync();
+		var result = await ForOrganizationAsync(SolidtimeClient.Members.GetAsync);
 
-		var result = await SolidtimeClient
-			.Members
-			.GetAsync(organizationId, CancellationToken);
+		Verify.PaginatedEnvelopeWithMeta(result);
 
-		result.Should().NotBeNull();
-		result.Meta.Should().NotBeNull();
-		
-		// Note: The Solidtime API returns paginated response structure but 
+		// Note: The Solidtime API returns paginated response structure but
 		// does not accept pagination query parameters
 		if (result.Data.Count > 0)
 		{
 			result.Meta!.Total.Should().BeGreaterThanOrEqualTo(result.Data.Count);
 		}
-		
-		result.Data.Should().NotBeNull();
 	}
 }

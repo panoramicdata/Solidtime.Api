@@ -12,16 +12,9 @@ public class ProjectTests(ITestOutputHelper testOutputHelper, Fixture fixture)
 	[Fact]
 	public async Task Projects_Get_Succeeds()
 	{
-		var organizationId = await GetOrganizationIdAsync();
+		var result = await GetProjectsAsync();
 
-		var result = await SolidtimeClient
-			.Projects
-			.GetAsync(organizationId, null, null, CancellationToken);
-
-		result.Should().NotBeNull();
-		result.Data.Should().NotBeNull();
-		result.Meta.Should().NotBeNull();
-		// Links may be null when the result set is empty
+		Verify.PaginatedEnvelopeWithMeta(result);
 	}
 
 	/// <summary>
@@ -32,53 +25,47 @@ public class ProjectTests(ITestOutputHelper testOutputHelper, Fixture fixture)
 	{
 		var organizationId = await GetOrganizationIdAsync();
 		var clientId = await GetClientIdAsync();
-		string? projectId = null;
 
-		try
-		{
-			// Create
-			var createRequest = new ProjectStoreRequest { Name = $"Test Project {Guid.NewGuid()}", Color = "#ff5733", ClientId = clientId, IsBillable = true };
-			var createResult = await SolidtimeClient.Projects.CreateAsync(organizationId, createRequest, CancellationToken);
+		var createRequest = new ProjectStoreRequest { Name = $"Test Project {Guid.NewGuid()}", Color = "#ff5733", ClientId = clientId, IsBillable = true };
 
-			createResult.Should().NotBeNull();
-			createResult.Data.Name.Should().Be(createRequest.Name);
-			createResult.Data.Color.Should().Be(createRequest.Color);
-			createResult.Data.Id.Should().NotBeNullOrWhiteSpace();
-			createResult.Data.IsArchived.Should().BeFalse();
-			projectId = createResult.Data.Id;
-
-			// Get by ID
-			var getResult = await SolidtimeClient.Projects.GetByIdAsync(organizationId, projectId, CancellationToken);
-			getResult.Should().NotBeNull();
-			getResult.Data.Id.Should().Be(projectId);
-			getResult.Data.Name.Should().Be(createRequest.Name);
-
-			// Update
-			var updateRequest = new ProjectUpdateRequest { Name = $"Updated Project {Guid.NewGuid()}", Color = "#33c3ff", ClientId = clientId, IsBillable = true, IsArchived = false };
-			var updateResult = await SolidtimeClient.Projects.UpdateAsync(organizationId, projectId, updateRequest, CancellationToken);
-
-			updateResult.Should().NotBeNull();
-			updateResult.Data.Id.Should().Be(projectId);
-			updateResult.Data.Name.Should().Be(updateRequest.Name);
-			updateResult.Data.Color.Should().Be(updateRequest.Color);
-
-			// Archive
-			var archiveRequest = new ProjectUpdateRequest { Name = updateRequest.Name, Color = updateRequest.Color, ClientId = clientId, IsBillable = true, IsArchived = true };
-			var archiveResult = await SolidtimeClient.Projects.UpdateAsync(organizationId, projectId, archiveRequest, CancellationToken);
-			archiveResult.Data.IsArchived.Should().BeTrue();
-
-			// Delete and verify
-			await SolidtimeClient.Projects.DeleteAsync(organizationId, projectId, CancellationToken);
-			var allProjects = await SolidtimeClient.Projects.GetAsync(organizationId, null, null, CancellationToken);
-			allProjects.Data.Should().NotContain(p => p.Id == projectId);
-		}
-		finally
-		{
-			if (projectId != null)
+		await CreateThenCleanupAsync(
+			() => SolidtimeClient.Projects.CreateAsync(organizationId, createRequest, CancellationToken),
+			created => SolidtimeClient.Projects.DeleteAsync(organizationId, created.Data.Id, CancellationToken),
+			async createResult =>
 			{
-				await SafeDeleteAsync(() => SolidtimeClient.Projects.DeleteAsync(organizationId, projectId, CancellationToken));
-			}
-		}
+				createResult.Should().NotBeNull();
+				createResult.Data.Name.Should().Be(createRequest.Name);
+				createResult.Data.Color.Should().Be(createRequest.Color);
+				createResult.Data.Id.Should().NotBeNullOrWhiteSpace();
+				createResult.Data.IsArchived.Should().BeFalse();
+
+				var projectId = createResult.Data.Id;
+
+				// Get by ID
+				var getResult = await SolidtimeClient.Projects.GetByIdAsync(organizationId, projectId, CancellationToken);
+				getResult.Should().NotBeNull();
+				getResult.Data.Id.Should().Be(projectId);
+				getResult.Data.Name.Should().Be(createRequest.Name);
+
+				// Update
+				var updateRequest = new ProjectUpdateRequest { Name = $"Updated Project {Guid.NewGuid()}", Color = "#33c3ff", ClientId = clientId, IsBillable = true, IsArchived = false };
+				var updateResult = await SolidtimeClient.Projects.UpdateAsync(organizationId, projectId, updateRequest, CancellationToken);
+
+				updateResult.Should().NotBeNull();
+				updateResult.Data.Id.Should().Be(projectId);
+				updateResult.Data.Name.Should().Be(updateRequest.Name);
+				updateResult.Data.Color.Should().Be(updateRequest.Color);
+
+				// Archive
+				var archiveRequest = new ProjectUpdateRequest { Name = updateRequest.Name, Color = updateRequest.Color, ClientId = clientId, IsBillable = true, IsArchived = true };
+				var archiveResult = await SolidtimeClient.Projects.UpdateAsync(organizationId, projectId, archiveRequest, CancellationToken);
+				archiveResult.Data.IsArchived.Should().BeTrue();
+
+				// Delete and verify
+				await SolidtimeClient.Projects.DeleteAsync(organizationId, projectId, CancellationToken);
+				var allProjects = await GetProjectsAsync();
+				allProjects.Data.Should().NotContain(project => project.Id == projectId);
+			});
 	}
 
 	/// <summary>
@@ -87,15 +74,11 @@ public class ProjectTests(ITestOutputHelper testOutputHelper, Fixture fixture)
 	[Fact]
 	public async Task Projects_Pagination_Works()
 	{
-		var organizationId = await GetOrganizationIdAsync();
-
 		// Request page 1 (perPage is not supported by the API)
-		var result = await SolidtimeClient
-			.Projects
-			.GetAsync(organizationId, 1, null, CancellationToken);
+		var result = await ForOrganizationAsync((organizationId, cancellationToken)
+			=> SolidtimeClient.Projects.GetAsync(organizationId, 1, null, cancellationToken));
 
-		result.Should().NotBeNull();
-		result.Meta.Should().NotBeNull();
+		Verify.PaginatedEnvelopeWithMeta(result);
 
 		// Note: The Solidtime API only populates pagination metadata when there is data
 		// If there are no projects, CurrentPage and other fields will be null
@@ -103,8 +86,6 @@ public class ProjectTests(ITestOutputHelper testOutputHelper, Fixture fixture)
 		{
 			result.Meta!.CurrentPage.Should().Be(1);
 		}
-
-		result.Data.Should().NotBeNull();
 	}
 
 	/// <summary>
@@ -113,23 +94,12 @@ public class ProjectTests(ITestOutputHelper testOutputHelper, Fixture fixture)
 	[Fact]
 	public async Task Projects_ArchivedFilter_Works()
 	{
-		var organizationId = await GetOrganizationIdAsync();
+		// Non-archived projects (the default) and all projects including archived
+		var result = await GetProjectsAsync();
+		var allResult = await GetProjectsAsync("all");
 
-		// Get non-archived projects (default)
-		var result = await SolidtimeClient
-			.Projects
-			.GetAsync(organizationId, null, null, CancellationToken);
-
-		result.Should().NotBeNull();
-		result.Data.Should().NotBeNull();
-
-		// Get all projects including archived
-		var allResult = await SolidtimeClient
-			.Projects
-			.GetAsync(organizationId, null, "all", CancellationToken);
-
-		allResult.Should().NotBeNull();
-		allResult.Data.Should().NotBeNull();
+		Verify.PaginatedEnvelope(result);
+		Verify.PaginatedEnvelope(allResult);
 	}
 
 	/// <summary>
@@ -138,18 +108,14 @@ public class ProjectTests(ITestOutputHelper testOutputHelper, Fixture fixture)
 	[Fact]
 	public async Task Projects_Get_MapsAllFields()
 	{
-		var organizationId = await GetOrganizationIdAsync();
-
-		var result = await SolidtimeClient
-			.Projects
-			.GetAsync(organizationId, null, null, CancellationToken);
+		var result = await GetProjectsAsync();
 
 		if (result.Data.Count != 0)
 		{
+			// Verify all fields are mapped (ExtensionData should be null or empty).
+			// The API returns billable_rate, estimated_time, spent_time and is_public,
+			// which are mapped to the model properties.
 			var project = result.Data.First();
-			// Verify all fields are mapped (ExtensionData should be null or empty)
-			// The API returns billable_rate, estimated_time, spent_time, is_public
-			// which should now be mapped to the model properties
 			project.Should().NotBeNull();
 			project.Id.Should().NotBeNullOrEmpty();
 			project.Name.Should().NotBeNullOrEmpty();
@@ -158,4 +124,8 @@ public class ProjectTests(ITestOutputHelper testOutputHelper, Fixture fixture)
 			// (both in list and individual GET responses), so these will always be null
 		}
 	}
+
+	private Task<PaginatedResponse<Project>> GetProjectsAsync(string? archived = null)
+		=> ForOrganizationAsync((organizationId, cancellationToken)
+			=> SolidtimeClient.Projects.GetAsync(organizationId, null, archived, cancellationToken));
 }

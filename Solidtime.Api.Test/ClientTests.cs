@@ -12,14 +12,9 @@ public class ClientTests(ITestOutputHelper testOutputHelper, Fixture fixture)
 	[Fact]
 	public async Task Clients_Get_Succeeds()
 	{
-		var organizationId = await GetOrganizationIdAsync();
+		var result = await GetClientsAsync();
 
-		var result = await SolidtimeClient
-			.Clients
-			.GetAsync(organizationId, null, null, CancellationToken);
-
-		result.Should().NotBeNull();
-		result.Data.Should().NotBeNull();
+		Verify.PaginatedEnvelope(result);
 	}
 
 	/// <summary>
@@ -29,45 +24,39 @@ public class ClientTests(ITestOutputHelper testOutputHelper, Fixture fixture)
 	public async Task Clients_CreateUpdateDelete_Succeeds()
 	{
 		var organizationId = await GetOrganizationIdAsync();
-		string? clientId = null;
 
-		try
-		{
-			// Create
-			var createRequest = new ClientStoreRequest { Name = $"{Configuration.CrudClientName} {Guid.NewGuid()}" };
-			var createResult = await SolidtimeClient.Clients.CreateAsync(organizationId, createRequest, CancellationToken);
+		var createRequest = new ClientStoreRequest { Name = $"{Configuration.CrudClientName} {Guid.NewGuid()}" };
 
-			createResult.Should().NotBeNull();
-			createResult.Data.Name.Should().Be(createRequest.Name);
-			createResult.Data.Id.Should().NotBeNullOrWhiteSpace();
-			createResult.Data.IsArchived.Should().BeFalse();
-			clientId = createResult.Data.Id;
-
-			// Update
-			var updateRequest = new ClientUpdateRequest { Name = $"{Configuration.CrudClientName} Updated {Guid.NewGuid()}", IsArchived = false };
-			var updateResult = await SolidtimeClient.Clients.UpdateAsync(organizationId, clientId, updateRequest, CancellationToken);
-
-			updateResult.Should().NotBeNull();
-			updateResult.Data.Id.Should().Be(clientId);
-			updateResult.Data.Name.Should().Be(updateRequest.Name);
-
-			// Archive
-			var archiveRequest = new ClientUpdateRequest { Name = updateResult.Data.Name, IsArchived = true };
-			var archiveResult = await SolidtimeClient.Clients.UpdateAsync(organizationId, clientId, archiveRequest, CancellationToken);
-			archiveResult.Data.IsArchived.Should().BeTrue();
-
-			// Delete and verify
-			await SolidtimeClient.Clients.DeleteAsync(organizationId, clientId, CancellationToken);
-			var allClients = await SolidtimeClient.Clients.GetAsync(organizationId, null, null, CancellationToken);
-			allClients.Data.Should().NotContain(c => c.Id == clientId);
-		}
-		finally
-		{
-			if (clientId != null)
+		await CreateThenCleanupAsync(
+			() => SolidtimeClient.Clients.CreateAsync(organizationId, createRequest, CancellationToken),
+			created => SolidtimeClient.Clients.DeleteAsync(organizationId, created.Data.Id, CancellationToken),
+			async createResult =>
 			{
-				await SafeDeleteAsync(() => SolidtimeClient.Clients.DeleteAsync(organizationId, clientId, CancellationToken));
-			}
-		}
+				createResult.Should().NotBeNull();
+				createResult.Data.Name.Should().Be(createRequest.Name);
+				createResult.Data.Id.Should().NotBeNullOrWhiteSpace();
+				createResult.Data.IsArchived.Should().BeFalse();
+
+				var clientId = createResult.Data.Id;
+
+				// Update
+				var updateRequest = new ClientUpdateRequest { Name = $"{Configuration.CrudClientName} Updated {Guid.NewGuid()}", IsArchived = false };
+				var updateResult = await SolidtimeClient.Clients.UpdateAsync(organizationId, clientId, updateRequest, CancellationToken);
+
+				updateResult.Should().NotBeNull();
+				updateResult.Data.Id.Should().Be(clientId);
+				updateResult.Data.Name.Should().Be(updateRequest.Name);
+
+				// Archive
+				var archiveRequest = new ClientUpdateRequest { Name = updateResult.Data.Name, IsArchived = true };
+				var archiveResult = await SolidtimeClient.Clients.UpdateAsync(organizationId, clientId, archiveRequest, CancellationToken);
+				archiveResult.Data.IsArchived.Should().BeTrue();
+
+				// Delete and verify
+				await SolidtimeClient.Clients.DeleteAsync(organizationId, clientId, CancellationToken);
+				var allClients = await GetClientsAsync();
+				allClients.Data.Should().NotContain(client => client.Id == clientId);
+			});
 	}
 
 	/// <summary>
@@ -76,23 +65,12 @@ public class ClientTests(ITestOutputHelper testOutputHelper, Fixture fixture)
 	[Fact]
 	public async Task Clients_ArchivedFilter_Works()
 	{
-		var organizationId = await GetOrganizationIdAsync();
+		// Non-archived clients (the default), then all clients including archived
+		var result = await GetClientsAsync(page: 1);
+		var allResult = await GetClientsAsync(page: 1, archived: "all");
 
-		// Get all clients (default, non-archived)
-		var result = await SolidtimeClient
-			.Clients
-			.GetAsync(organizationId, 1, null, CancellationToken);
-
-		result.Should().NotBeNull();
-		result.Data.Should().NotBeNull();
-
-		// Get all clients including archived
-		var allResult = await SolidtimeClient
-			.Clients
-			.GetAsync(organizationId, 1, "all", CancellationToken);
-
-		allResult.Should().NotBeNull();
-		allResult.Data.Should().NotBeNull();
+		Verify.PaginatedEnvelope(result);
+		Verify.PaginatedEnvelope(allResult);
 	}
 
 	/// <summary>
@@ -101,20 +79,15 @@ public class ClientTests(ITestOutputHelper testOutputHelper, Fixture fixture)
 	[Fact]
 	public async Task Clients_Get_HasValidTimestamps()
 	{
-		var organizationId = await GetOrganizationIdAsync();
-
-		var result = await SolidtimeClient
-			.Clients
-			.GetAsync(organizationId, null, null, CancellationToken);
+		var result = await GetClientsAsync();
 
 		if (result.Data.Count != 0)
 		{
-			var client = result.Data.First();
-			client.CreatedAt.Should().NotBeNull();
-			client.CreatedAt!.Value.Should().BeBefore(DateTimeOffset.UtcNow);
-			client.UpdatedAt.Should().NotBeNull();
-			client.UpdatedAt!.Value.Should().BeBefore(DateTimeOffset.UtcNow);
-			client.UpdatedAt.Value.Should().BeOnOrAfter(client.CreatedAt.Value);
+			Verify.Timestamps(result.Data.First());
 		}
 	}
+
+	private Task<PaginatedResponse<Client>> GetClientsAsync(int? page = null, string? archived = null)
+		=> ForOrganizationAsync((organizationId, cancellationToken)
+			=> SolidtimeClient.Clients.GetAsync(organizationId, page, archived, cancellationToken));
 }

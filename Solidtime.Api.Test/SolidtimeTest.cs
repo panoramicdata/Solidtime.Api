@@ -253,6 +253,35 @@ public class SolidtimeTest : TestBed<Fixture>
 	}
 
 	/// <summary>
+	/// Creates a resource, runs the test body against it, and deletes it afterwards however the
+	/// body ends. This replaces the try/finally, null-check and best-effort-delete scaffolding
+	/// that every create/update/delete test would otherwise repeat.
+	/// </summary>
+	/// <typeparam name="TCreated">The type returned by the create call</typeparam>
+	/// <param name="createAsync">Creates the resource</param>
+	/// <param name="deleteAsync">Deletes the created resource</param>
+	/// <param name="body">The assertions to run against the created resource</param>
+	protected static async Task CreateThenCleanupAsync<TCreated>(
+		Func<Task<TCreated>> createAsync,
+		Func<TCreated, Task> deleteAsync,
+		Func<TCreated, Task> body)
+	{
+		ArgumentNullException.ThrowIfNull(createAsync);
+		ArgumentNullException.ThrowIfNull(deleteAsync);
+		ArgumentNullException.ThrowIfNull(body);
+
+		var created = await createAsync();
+		try
+		{
+			await body(created);
+		}
+		finally
+		{
+			await SafeDeleteAsync(() => deleteAsync(created));
+		}
+	}
+
+	/// <summary>
 	/// Safely executes a delete operation, ignoring errors if the resource was already deleted
 	/// </summary>
 	/// <param name="deleteAction">The delete action to execute</param>

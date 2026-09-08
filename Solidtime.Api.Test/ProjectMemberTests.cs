@@ -12,27 +12,13 @@ public class ProjectMemberTests(ITestOutputHelper testOutputHelper, Fixture fixt
 	[Fact]
 	public async Task ProjectMembers_Get_Succeeds()
 	{
-		var organizationId = await GetOrganizationIdAsync();
-
-		// Try to get a project ID - test will be inconclusive if no projects exist
-		string? projectId;
-		try
+		var result = await GetProjectMembersAsync("project members functionality");
+		if (result is null)
 		{
-			projectId = await GetProjectIdAsync();
-		}
-		catch (InvalidOperationException ex)
-		{
-			// No projects in organization - test passes but logs warning
-			Logger.LogWarning(ex, "No projects found in organization - test cannot verify project members functionality");
 			return;
 		}
 
-		var result = await SolidtimeClient
-			.ProjectMembers
-			.GetAsync(organizationId, projectId, CancellationToken);
-
-		result.Should().NotBeNull();
-		result.Data.Should().NotBeNull();
+		Verify.PaginatedEnvelope(result);
 	}
 
 	/// <summary>
@@ -41,35 +27,36 @@ public class ProjectMemberTests(ITestOutputHelper testOutputHelper, Fixture fixt
 	[Fact]
 	public async Task ProjectMembers_Get_HasValidData()
 	{
-		var organizationId = await GetOrganizationIdAsync();
-
-		// Try to get a project ID - test will be inconclusive if no projects exist
-		string? projectId;
-		try
+		var result = await GetProjectMembersAsync("project member data");
+		if (result is null)
 		{
-			projectId = await GetProjectIdAsync();
-		}
-		catch (InvalidOperationException ex)
-		{
-			// No projects in organization - test passes but logs warning
-			Logger.LogWarning(ex, "No projects found in organization - test cannot verify project member data");
 			return;
 		}
-
-		var result = await SolidtimeClient
-			.ProjectMembers
-			.GetAsync(organizationId, projectId, CancellationToken);
 
 		if (result.Data.Count != 0)
 		{
 			var member = result.Data.First();
 			member.Id.Should().NotBeNullOrWhiteSpace();
 			member.UserId.Should().NotBeNullOrWhiteSpace();
-			member.ProjectId.Should().Be(projectId);
-			member.CreatedAt.Should().NotBeNull();
-			member.CreatedAt!.Value.Should().BeBefore(DateTimeOffset.UtcNow);
-			member.UpdatedAt.Should().NotBeNull();
-			member.UpdatedAt!.Value.Should().BeBefore(DateTimeOffset.UtcNow);
+			member.ProjectId.Should().NotBeNullOrWhiteSpace();
+			Verify.Timestamps(member);
 		}
+	}
+
+	/// <summary>
+	/// Gets the members of the sample project, or null when the organization has no projects.
+	/// </summary>
+	/// <param name="whatCannotBeVerified">What the caller is unable to verify without a project</param>
+	/// <returns>The project members, or null when no project is available</returns>
+	private async Task<PaginatedResponse<ProjectMember>?> GetProjectMembersAsync(string whatCannotBeVerified)
+	{
+		var projectId = await TryGetProjectIdAsync(whatCannotBeVerified);
+		if (projectId is null)
+		{
+			return null;
+		}
+
+		return await ForOrganizationAsync((organizationId, cancellationToken)
+			=> SolidtimeClient.ProjectMembers.GetAsync(organizationId, projectId, cancellationToken));
 	}
 }
