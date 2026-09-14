@@ -34,27 +34,22 @@ public class ProjectTests(ITestOutputHelper testOutputHelper, Fixture fixture)
 			async createResult =>
 			{
 				createResult.Should().NotBeNull();
-				createResult.Data.Name.Should().Be(createRequest.Name);
-				createResult.Data.Color.Should().Be(createRequest.Color);
 				createResult.Data.Id.Should().NotBeNullOrWhiteSpace();
 				createResult.Data.IsArchived.Should().BeFalse();
+				VerifyProject(createResult.Data, createRequest.Name, createRequest.Color);
 
 				var projectId = createResult.Data.Id;
 
 				// Get by ID
 				var getResult = await SolidtimeClient.Projects.GetByIdAsync(organizationId, projectId, CancellationToken);
 				getResult.Should().NotBeNull();
-				getResult.Data.Id.Should().Be(projectId);
-				getResult.Data.Name.Should().Be(createRequest.Name);
+				VerifyProject(getResult.Data, createRequest.Name);
 
 				// Update
 				var updateRequest = new ProjectUpdateRequest { Name = $"Updated Project {Guid.NewGuid()}", Color = "#33c3ff", ClientId = clientId, IsBillable = true, IsArchived = false };
 				var updateResult = await SolidtimeClient.Projects.UpdateAsync(organizationId, projectId, updateRequest, CancellationToken);
-
 				updateResult.Should().NotBeNull();
-				updateResult.Data.Id.Should().Be(projectId);
-				updateResult.Data.Name.Should().Be(updateRequest.Name);
-				updateResult.Data.Color.Should().Be(updateRequest.Color);
+				VerifyProject(updateResult.Data, updateRequest.Name, updateRequest.Color);
 
 				// Archive
 				var archiveRequest = new ProjectUpdateRequest { Name = updateRequest.Name, Color = updateRequest.Color, ClientId = clientId, IsBillable = true, IsArchived = true };
@@ -128,4 +123,17 @@ public class ProjectTests(ITestOutputHelper testOutputHelper, Fixture fixture)
 	private Task<PaginatedResponse<Project>> GetProjectsAsync(string? archived = null)
 		=> ForOrganizationAsync((organizationId, cancellationToken)
 			=> SolidtimeClient.Projects.GetAsync(organizationId, null, archived, cancellationToken));
+
+	/// <summary>
+	/// Verifies a project against the expected name and, optionally, color
+	/// </summary>
+	private static void VerifyProject(Project project, string expectedName, string? expectedColor = null)
+	{
+		project.Name.Should().Be(expectedName);
+
+		if (expectedColor is not null)
+		{
+			project.Color.Should().Be(expectedColor);
+		}
+	}
 }

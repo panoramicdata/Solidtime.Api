@@ -12,9 +12,7 @@ public class TaskTests(ITestOutputHelper testOutputHelper, Fixture fixture)
 	[Fact]
 	public async Task Tasks_Get_Succeeds()
 	{
-		var result = await GetTasksAsync();
-
-		Verify.PaginatedEnvelopeWithMeta(result);
+		await VerifyGetTasksAsync();
 	}
 
 	/// <summary>
@@ -75,9 +73,7 @@ public class TaskTests(ITestOutputHelper testOutputHelper, Fixture fixture)
 		// Note: The tasks endpoint does not support page/per_page parameters according to the
 		// OpenAPI spec. It only supports project_id and done filters, and the API returns
 		// pagination metadata using its own default page size (500).
-		var result = await GetTasksAsync();
-
-		Verify.PaginatedEnvelopeWithMeta(result);
+		await VerifyGetTasksAsync();
 	}
 
 	/// <summary>
@@ -97,4 +93,11 @@ public class TaskTests(ITestOutputHelper testOutputHelper, Fixture fixture)
 	private Task<PaginatedResponse<TaskModel>> GetTasksAsync()
 		=> ForOrganizationAsync((organizationId, cancellationToken)
 			=> SolidtimeClient.Tasks.GetAsync(organizationId, null, null, cancellationToken));
+
+	private async Task VerifyGetTasksAsync()
+	{
+		var result = await GetTasksAsync();
+
+		Verify.PaginatedEnvelopeWithMeta(result);
+	}
 }

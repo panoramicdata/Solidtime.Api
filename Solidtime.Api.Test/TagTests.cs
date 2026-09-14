@@ -39,9 +39,7 @@ public class TagTests(ITestOutputHelper testOutputHelper, Fixture fixture)
 				var tagId = createResult.Data.Id;
 
 				// Verify creation
-				var allTags = await GetTagsAsync();
-				allTags.Data.Should().Contain(tag => tag.Id == tagId);
-				allTags.Data.First(tag => tag.Id == tagId).Name.Should().Be(createRequest.Name);
+				await AssertTagExistsAsync(tagId, createRequest.Name);
 
 				// Update
 				var updateRequest = new TagUpdateRequest { Name = $"Updated Tag {Guid.NewGuid()}" };
@@ -52,8 +50,7 @@ public class TagTests(ITestOutputHelper testOutputHelper, Fixture fixture)
 
 				// Delete and verify
 				await SolidtimeClient.Tags.DeleteAsync(organizationId, tagId, CancellationToken);
-				var afterDelete = await GetTagsAsync();
-				afterDelete.Data.Should().NotContain(tag => tag.Id == tagId);
+				await AssertTagMissingAsync(tagId);
 			});
 	}
 
@@ -73,4 +70,23 @@ public class TagTests(ITestOutputHelper testOutputHelper, Fixture fixture)
 
 	private Task<PaginatedResponse<Tag>> GetTagsAsync()
 		=> ForOrganizationAsync(SolidtimeClient.Tags.GetAsync);
+
+	/// <summary>
+	/// Asserts that the tag with the given id is present with the given name
+	/// </summary>
+	private async Task AssertTagExistsAsync(string tagId, string expectedName)
+	{
+		var allTags = await GetTagsAsync();
+		allTags.Data.Should().Contain(tag => tag.Id == tagId);
+		allTags.Data.First(tag => tag.Id == tagId).Name.Should().Be(expectedName);
+	}
+
+	/// <summary>
+	/// Asserts that the tag with the given id is no longer present
+	/// </summary>
+	private async Task AssertTagMissingAsync(string tagId)
+	{
+		var afterDelete = await GetTagsAsync();
+		afterDelete.Data.Should().NotContain(tag => tag.Id == tagId);
+	}
 }

@@ -65,12 +65,8 @@ public class ClientTests(ITestOutputHelper testOutputHelper, Fixture fixture)
 	[Fact]
 	public async Task Clients_ArchivedFilter_Works()
 	{
-		// Non-archived clients (the default), then all clients including archived
-		var result = await GetClientsAsync(page: 1);
-		var allResult = await GetClientsAsync(page: 1, archived: "all");
-
-		Verify.PaginatedEnvelope(result);
-		Verify.PaginatedEnvelope(allResult);
+		await VerifyClientListingAsync(archived: null);
+		await VerifyClientListingAsync(archived: "all");
 	}
 
 	/// <summary>
@@ -85,6 +81,13 @@ public class ClientTests(ITestOutputHelper testOutputHelper, Fixture fixture)
 		{
 			Verify.Timestamps(result.Data.First());
 		}
+	}
+
+	private async Task VerifyClientListingAsync(string? archived = null)
+	{
+		var result = await GetClientsAsync(page: 1, archived: archived);
+
+		Verify.PaginatedEnvelope(result);
 	}
 
 	private Task<PaginatedResponse<Client>> GetClientsAsync(int? page = null, string? archived = null)
