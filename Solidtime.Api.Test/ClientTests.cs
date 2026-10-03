@@ -65,7 +65,7 @@ public class ClientTests(ITestOutputHelper testOutputHelper, Fixture fixture)
 	[Fact]
 	public async Task Clients_ArchivedFilter_Works()
 	{
-		await VerifyClientListingAsync(archived: null);
+		await VerifyClientListingAsync();
 		await VerifyClientListingAsync(archived: "all");
 	}
 
