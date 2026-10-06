@@ -2,30 +2,32 @@
 
 ## Supported Versions
 
-We release patches for security vulnerabilities in the following versions:
-
-| Version | Supported          |
-| ------- | ------------------ |
-| 1.x.x   | :white_check_mark: |
+Only the latest released version is supported with security updates.
 
 ## Reporting a Vulnerability
 
-Please report (suspected) security vulnerabilities to **security@panoramicdata.com**. You will receive a response from us within 48 hours. If the issue is confirmed, we will release a patch as soon as possible depending on complexity.
+If you discover a security vulnerability, please report it responsibly.
 
-Please do not report security vulnerabilities through public GitHub issues.
+**Do not open a public GitHub issue.**
 
-## Security Considerations
+Instead, use GitHub's private vulnerability reporting: open this repository's **Security** tab
+and choose **Report a vulnerability**, or go straight to
+https://github.com/panoramicdata/Solidtime.Api/security/advisories/new
 
-When using this library:
+Please include:
 
-1. **API Tokens**: Never commit API tokens to source control
-2. **User Secrets**: Use User Secrets or environment variables for sensitive configuration
-3. **HTTPS**: Always use HTTPS endpoints (default behavior)
-4. **Token Storage**: Store tokens securely using appropriate secret management solutions
+- A description of the vulnerability
+- Steps to reproduce the issue
+- Any relevant logs or screenshots
 
-## Best Practices
+We will acknowledge receipt within 48 hours and aim to provide a fix or mitigation within 7 business days.
 
-- Rotate API tokens regularly
-- Use read-only tokens when write access is not needed
-- Implement proper error handling to avoid leaking sensitive information
-- Keep the library updated to the latest version
+## Disclosure Policy
+
+We follow a coordinated disclosure process. We ask that you:
+
+1. Allow us reasonable time to investigate and address the issue
+2. Avoid exploiting the vulnerability beyond what is necessary to demonstrate it
+3. Do not disclose the issue publicly until we have released a fix
+
+Thank you for helping keep our software and users safe.
