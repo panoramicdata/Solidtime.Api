@@ -44,6 +44,14 @@ public partial class AuthenticatedBackingOffHttpClientHandler : DelegatingHandle
 	{
 		ArgumentNullException.ThrowIfNull(request);
 
+		if (_options.IsReadOnly
+			&& request.Method != HttpMethod.Get
+			&& request.Method != HttpMethod.Head
+			&& request.Method != HttpMethod.Options)
+		{
+			throw new InvalidOperationException($"The client is read-only; {request.Method} {request.RequestUri?.AbsolutePath} would change the server.");
+		}
+
 		// Add Bearer token authentication
 		request.Headers.Authorization = new AuthenticationHeaderValue("Bearer", _options.ApiToken);
 
