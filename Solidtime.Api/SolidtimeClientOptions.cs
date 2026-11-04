@@ -38,6 +38,11 @@ public class SolidtimeClientOptions
 	public JsonUnmappedMemberHandling JsonUnmappedMemberHandling { get; set; } = JsonUnmappedMemberHandling.Skip;
 
 	/// <summary>
+	/// When true, the client refuses every request other than GET, HEAD and OPTIONS before sending it
+	/// </summary>
+	public bool IsReadOnly { get; set; }
+
+	/// <summary>
 	/// Validates the options
 	/// </summary>
 	/// <exception cref="InvalidOperationException">Thrown when required options are missing or invalid</exception>
