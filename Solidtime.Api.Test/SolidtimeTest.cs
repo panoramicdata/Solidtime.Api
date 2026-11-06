@@ -8,6 +8,7 @@ namespace Solidtime.Api.Test;
 /// <summary>
 /// Base class for Solidtime API tests
 /// </summary>
+[Trait("Category", "Integration")]
 public class SolidtimeTest : TestBed<Fixture>
 {
 	/// <summary>
