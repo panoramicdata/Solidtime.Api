@@ -79,7 +79,7 @@ jobs:
         dotnet-version: 10.0.x
 
     - name: Run tests with coverage
-      run: dotnet test --project Solidtime.Api.Test/Solidtime.Api.Test.csproj --coverage --coverage-output-format cobertura --coverage-output coverage.cobertura.xml
+      run: dotnet test --project Solidtime.Api.Test/Solidtime.Api.Test.csproj --coverage --coverage-output-format cobertura --coverage-output coverage.cobertura.xml --filter-not-trait "Category=Integration" --filter-not-trait "Category=IntegrationReadOnly"
 
     - name: Upload coverage to Codacy
       continue-on-error: true
