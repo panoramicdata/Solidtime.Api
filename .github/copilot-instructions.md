@@ -69,7 +69,7 @@ $content = $content -replace 'old', 'new'
 
 ## Project Overview
 
-**Solidtime.Api** is a .NET 10 NuGet package providing a strongly-typed client library for the [Solidtime API](https://docs.solidtime.io/api-reference). This project follows the exact same architecture, patterns, and quality standards as the sibling **Toggl.Api** project.
+**Solidtime.Api** is a .NET 11.0 NuGet package providing a strongly-typed client library for the [Solidtime API](https://docs.solidtime.io/api-reference). This project follows the exact same architecture, patterns, and quality standards as the sibling **Toggl.Api** project.
 
 ## Project Context
 
@@ -80,13 +80,13 @@ Solidtime is a modern, open-source time tracking solution with self-hosting capa
 - Create a production-ready .NET client library for the Solidtime API
 - Follow identical patterns and standards as Toggl.Api for consistency
 - Provide a clean, intuitive, strongly-typed API surface
-- Support .NET 10 with latest C# features
+- Support .NET 11.0 with latest C# features
 - Include comprehensive test coverage with XUnit 3 and AwesomeAssertions
 
 ## Technology Stack
 
 ### Core Technologies
-- **Framework**: .NET 10.0
+- **Framework**: .NET 11.0
 - **Language**: C# (latest version)
 - **REST Client**: Refit 8.0.0+ (for declarative HTTP client interfaces)
 - **JSON**: System.Text.Json (snake_case naming policy)

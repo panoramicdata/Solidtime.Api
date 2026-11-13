@@ -5,9 +5,12 @@
 [![Nuget](https://img.shields.io/nuget/dt/Solidtime.Api)](https://www.nuget.org/packages/Solidtime.Api/)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 
+
+Supports .NET 11.0.
+
 ## Description
 
-A .NET 10.0 client library for the [Solidtime API](https://docs.solidtime.io/api-reference).
+A .NET 11.0 client library for the [Solidtime API](https://docs.solidtime.io/api-reference).
 
 Solidtime is a modern, open-source time tracking solution with comprehensive project management, time tracking, reporting, and team collaboration features.
 
