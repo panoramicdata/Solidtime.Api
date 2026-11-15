@@ -29,19 +29,14 @@ internal sealed class StubHandler(Func<HttpRequestMessage, int, HttpResponseMess
 /// <summary>
 /// A logger that keeps every formatted message
 /// </summary>
-internal sealed class ListLogger : ILogger
+internal sealed class ListLogger : TestLoggerBase
 {
 	/// <summary>
 	/// The messages logged so far
 	/// </summary>
 	public List<string> Messages { get; } = [];
 
-	public IDisposable? BeginScope<TState>(TState state) where TState : notnull => null;
-
-	public bool IsEnabled(LogLevel logLevel) => true;
-
-	public void Log<TState>(LogLevel logLevel, EventId eventId, TState state, Exception? exception, Func<TState, Exception?, string> formatter)
-		=> Messages.Add(formatter(state, exception));
+	protected override void Write(LogLevel logLevel, string message, Exception? exception) => Messages.Add(message);
 }
 
 /// <summary>

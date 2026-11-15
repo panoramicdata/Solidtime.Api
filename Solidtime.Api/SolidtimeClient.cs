@@ -8,7 +8,7 @@ namespace Solidtime.Api;
 /// </summary>
 public class SolidtimeClient : IDisposable
 {
-	private readonly HttpClient _httpClient;
+	private readonly List<IDisposable> _owned = [];
 	private bool _disposed;
 
 	/// <summary>
@@ -22,11 +22,12 @@ public class SolidtimeClient : IDisposable
 		// Validate that all of the necessary configuration has been provided
 		options.Validate();
 
-		_httpClient = new HttpClient(new AuthenticatedBackingOffHttpClientHandler(options))
+		var httpClient = new HttpClient(new AuthenticatedBackingOffHttpClientHandler(options))
 		{
 			BaseAddress = new Uri(options.BaseUrl),
 			Timeout = TimeSpan.FromSeconds(options.TimeoutSeconds)
 		};
+		_owned.Add(httpClient);
 
 		var refitSettings = new RefitSettings
 		{
@@ -44,19 +45,19 @@ public class SolidtimeClient : IDisposable
 		};
 
 		// Initialize Refit interfaces
-		ApiTokens = RestService.For<IApiTokens>(_httpClient, refitSettings);
-		Me = RestService.For<IMe>(_httpClient, refitSettings);
-		Organizations = RestService.For<IOrganizations>(_httpClient, refitSettings);
-		Clients = RestService.For<IClients>(_httpClient, refitSettings);
-		Projects = RestService.For<IProjects>(_httpClient, refitSettings);
-		Tags = RestService.For<ITags>(_httpClient, refitSettings);
-		Tasks = RestService.For<ITasks>(_httpClient, refitSettings);
-		TimeEntries = RestService.For<ITimeEntries>(_httpClient, refitSettings);
-		ProjectMembers = RestService.For<IProjectMembers>(_httpClient, refitSettings);
-		Members = RestService.For<IMembers>(_httpClient, refitSettings);
-		Reports = RestService.For<IReports>(_httpClient, refitSettings);
-		Charts = RestService.For<ICharts>(_httpClient, refitSettings);
-		Imports = RestService.For<IImports>(_httpClient, refitSettings);
+		ApiTokens = RestService.For<IApiTokens>(httpClient, refitSettings);
+		Me = RestService.For<IMe>(httpClient, refitSettings);
+		Organizations = RestService.For<IOrganizations>(httpClient, refitSettings);
+		Clients = RestService.For<IClients>(httpClient, refitSettings);
+		Projects = RestService.For<IProjects>(httpClient, refitSettings);
+		Tags = RestService.For<ITags>(httpClient, refitSettings);
+		Tasks = RestService.For<ITasks>(httpClient, refitSettings);
+		TimeEntries = RestService.For<ITimeEntries>(httpClient, refitSettings);
+		ProjectMembers = RestService.For<IProjectMembers>(httpClient, refitSettings);
+		Members = RestService.For<IMembers>(httpClient, refitSettings);
+		Reports = RestService.For<IReports>(httpClient, refitSettings);
+		Charts = RestService.For<ICharts>(httpClient, refitSettings);
+		Imports = RestService.For<IImports>(httpClient, refitSettings);
 	}
 
 	/// <summary>
@@ -129,7 +130,6 @@ public class SolidtimeClient : IDisposable
 	/// </summary>
 	public void Dispose()
 	{
-		_httpClient.Dispose();
 		Dispose(true);
 		GC.SuppressFinalize(this);
 	}
@@ -147,7 +147,10 @@ public class SolidtimeClient : IDisposable
 
 		if (disposing)
 		{
-			_httpClient.Dispose();
+			foreach (var owned in _owned)
+			{
+				owned.Dispose();
+			}
 		}
 
 		_disposed = true;
