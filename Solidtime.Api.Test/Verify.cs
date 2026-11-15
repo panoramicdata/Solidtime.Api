@@ -20,6 +20,27 @@ internal static class Verify
 	}
 
 	/// <summary>
+	/// Asserts that an entity came back with an id (the expected one when given) and the expected name.
+	/// </summary>
+	/// <param name="entity">The entity to check</param>
+	/// <param name="actualName">The name the entity carries</param>
+	/// <param name="expectedName">The name it should carry</param>
+	/// <param name="expectedId">The id it should carry, or null to accept any non-blank id</param>
+	internal static void Entity(SolidtimeEntityBase entity, string actualName, string expectedName, string? expectedId = null)
+	{
+		entity.Should().NotBeNull();
+		actualName.Should().Be(expectedName);
+		if (expectedId is null)
+		{
+			entity.Id.Should().NotBeNullOrWhiteSpace();
+		}
+		else
+		{
+			entity.Id.Should().Be(expectedId);
+		}
+	}
+
+	/// <summary>
 	/// Awaits a listing, asserts the envelope, and checks the timestamps of its first item when there is one.
 	/// </summary>
 	/// <typeparam name="T">The type of the items in the envelope</typeparam>

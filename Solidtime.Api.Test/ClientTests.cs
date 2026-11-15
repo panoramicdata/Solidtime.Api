@@ -28,9 +28,7 @@ public class ClientTests(ITestOutputHelper testOutputHelper, Fixture fixture)
 			created => SolidtimeClient.Clients.DeleteAsync(organizationId, created.Data.Id, CancellationToken),
 			async createResult =>
 			{
-				createResult.Should().NotBeNull();
-				createResult.Data.Name.Should().Be(createRequest.Name);
-				createResult.Data.Id.Should().NotBeNullOrWhiteSpace();
+				Verify.Entity(createResult.Data, createResult.Data.Name, createRequest.Name);
 				createResult.Data.IsArchived.Should().BeFalse();
 
 				var clientId = createResult.Data.Id;
@@ -39,9 +37,7 @@ public class ClientTests(ITestOutputHelper testOutputHelper, Fixture fixture)
 				var updateRequest = new ClientUpdateRequest { Name = $"{Configuration.CrudClientName} Updated {Guid.NewGuid()}", IsArchived = false };
 				var updateResult = await SolidtimeClient.Clients.UpdateAsync(organizationId, clientId, updateRequest, CancellationToken);
 
-				updateResult.Should().NotBeNull();
-				updateResult.Data.Id.Should().Be(clientId);
-				updateResult.Data.Name.Should().Be(updateRequest.Name);
+				Verify.Entity(updateResult.Data, updateResult.Data.Name, updateRequest.Name, clientId);
 
 				// Archive
 				var archiveRequest = new ClientUpdateRequest { Name = updateResult.Data.Name, IsArchived = true };
