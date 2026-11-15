@@ -129,6 +129,7 @@ public class SolidtimeClient : IDisposable
 	/// </summary>
 	public void Dispose()
 	{
+		_httpClient.Dispose();
 		Dispose(true);
 		GC.SuppressFinalize(this);
 	}
