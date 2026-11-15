@@ -1,4 +1,4 @@
-namespace Solidtime.Api.Test;
+﻿namespace Solidtime.Api.Test;
 
 /// <summary>
 /// Tests for the Clients endpoint
@@ -10,12 +10,8 @@ public class ClientTests(ITestOutputHelper testOutputHelper, Fixture fixture)
 	/// Tests that getting all clients succeeds
 	/// </summary>
 	[Fact]
-	public async Task Clients_Get_Succeeds()
-	{
-		var result = await GetClientsAsync();
-
-		Verify.PaginatedEnvelope(result);
-	}
+	public Task Clients_Get_Succeeds()
+		=> Verify.ListingAsync(GetClientsAsync());
 
 	/// <summary>
 	/// Tests that creating, updating, and deleting a client succeeds
@@ -32,9 +28,7 @@ public class ClientTests(ITestOutputHelper testOutputHelper, Fixture fixture)
 			created => SolidtimeClient.Clients.DeleteAsync(organizationId, created.Data.Id, CancellationToken),
 			async createResult =>
 			{
-				createResult.Should().NotBeNull();
-				createResult.Data.Name.Should().Be(createRequest.Name);
-				createResult.Data.Id.Should().NotBeNullOrWhiteSpace();
+				Verify.NamedEntity(createResult.Data, createResult.Data.Name, createRequest.Name);
 				createResult.Data.IsArchived.Should().BeFalse();
 
 				var clientId = createResult.Data.Id;
@@ -43,9 +37,7 @@ public class ClientTests(ITestOutputHelper testOutputHelper, Fixture fixture)
 				var updateRequest = new ClientUpdateRequest { Name = $"{Configuration.CrudClientName} Updated {Guid.NewGuid()}", IsArchived = false };
 				var updateResult = await SolidtimeClient.Clients.UpdateAsync(organizationId, clientId, updateRequest, CancellationToken);
 
-				updateResult.Should().NotBeNull();
-				updateResult.Data.Id.Should().Be(clientId);
-				updateResult.Data.Name.Should().Be(updateRequest.Name);
+				Verify.NamedEntity(updateResult.Data, updateResult.Data.Name, updateRequest.Name, clientId);
 
 				// Archive
 				var archiveRequest = new ClientUpdateRequest { Name = updateResult.Data.Name, IsArchived = true };
@@ -73,22 +65,11 @@ public class ClientTests(ITestOutputHelper testOutputHelper, Fixture fixture)
 	/// Tests that clients have valid timestamps
 	/// </summary>
 	[Fact]
-	public async Task Clients_Get_HasValidTimestamps()
-	{
-		var result = await GetClientsAsync();
+	public Task Clients_Get_HasValidTimestamps()
+		=> Verify.ListingAsync(GetClientsAsync());
 
-		if (result.Data.Count != 0)
-		{
-			Verify.Timestamps(result.Data.First());
-		}
-	}
-
-	private async Task VerifyClientListingAsync(string? archived = null)
-	{
-		var result = await GetClientsAsync(page: 1, archived: archived);
-
-		Verify.PaginatedEnvelope(result);
-	}
+	private Task VerifyClientListingAsync(string? archived = null)
+		=> Verify.ListingAsync(GetClientsAsync(page: 1, archived: archived));
 
 	private Task<PaginatedResponse<Client>> GetClientsAsync(int? page = null, string? archived = null)
 		=> ForOrganizationAsync((organizationId, cancellationToken)

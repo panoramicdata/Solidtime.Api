@@ -1,4 +1,4 @@
-namespace Solidtime.Api.Test;
+﻿namespace Solidtime.Api.Test;
 
 /// <summary>
 /// Tests for the Tags endpoint
@@ -10,12 +10,8 @@ public class TagTests(ITestOutputHelper testOutputHelper, Fixture fixture)
 	/// Tests that getting all tags succeeds
 	/// </summary>
 	[Fact]
-	public async Task Tags_Get_Succeeds()
-	{
-		var result = await GetTagsAsync();
-
-		Verify.PaginatedEnvelope(result);
-	}
+	public Task Tags_Get_Succeeds()
+		=> Verify.ListingAsync(GetTagsAsync());
 
 	/// <summary>
 	/// Tests that creating, updating, and deleting a tag succeeds
@@ -32,9 +28,7 @@ public class TagTests(ITestOutputHelper testOutputHelper, Fixture fixture)
 			created => SolidtimeClient.Tags.DeleteAsync(organizationId, created.Data.Id, CancellationToken),
 			async createResult =>
 			{
-				createResult.Should().NotBeNull();
-				createResult.Data.Name.Should().Be(createRequest.Name);
-				createResult.Data.Id.Should().NotBeNullOrWhiteSpace();
+				Verify.NamedEntity(createResult.Data, createResult.Data.Name, createRequest.Name);
 
 				var tagId = createResult.Data.Id;
 
@@ -45,8 +39,7 @@ public class TagTests(ITestOutputHelper testOutputHelper, Fixture fixture)
 				var updateRequest = new TagUpdateRequest { Name = $"Updated Tag {Guid.NewGuid()}" };
 				var updateResult = await SolidtimeClient.Tags.UpdateAsync(organizationId, tagId, updateRequest, CancellationToken);
 
-				updateResult.Should().NotBeNull();
-				updateResult.Data.Name.Should().Be(updateRequest.Name);
+				Verify.NamedEntity(updateResult.Data, updateResult.Data.Name, updateRequest.Name, tagId);
 
 				// Delete and verify
 				await SolidtimeClient.Tags.DeleteAsync(organizationId, tagId, CancellationToken);
@@ -58,15 +51,8 @@ public class TagTests(ITestOutputHelper testOutputHelper, Fixture fixture)
 	/// Tests that tags have valid timestamps
 	/// </summary>
 	[Fact]
-	public async Task Tags_Get_HasValidTimestamps()
-	{
-		var result = await GetTagsAsync();
-
-		if (result.Data.Count != 0)
-		{
-			Verify.Timestamps(result.Data.First());
-		}
-	}
+	public Task Tags_Get_HasValidTimestamps()
+		=> Verify.ListingAsync(GetTagsAsync());
 
 	private Task<PaginatedResponse<Tag>> GetTagsAsync()
 		=> ForOrganizationAsync(SolidtimeClient.Tags.GetAsync);

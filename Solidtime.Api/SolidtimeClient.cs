@@ -1,4 +1,4 @@
-using Solidtime.Api.Interfaces;
+﻿using Solidtime.Api.Interfaces;
 using System.Net.Http;
 
 namespace Solidtime.Api;
@@ -146,7 +146,7 @@ public class SolidtimeClient : IDisposable
 
 		if (disposing)
 		{
-			_httpClient?.Dispose();
+			_httpClient.Dispose();
 		}
 
 		_disposed = true;

@@ -1,4 +1,4 @@
-namespace Solidtime.Api.Test;
+﻿namespace Solidtime.Api.Test;
 
 /// <summary>
 /// Assertions shared by the endpoint test classes.
@@ -17,6 +17,44 @@ internal static class Verify
 	{
 		result.Should().NotBeNull();
 		result.Data.Should().NotBeNull();
+	}
+
+	/// <summary>
+	/// Asserts that an entity came back with an id (the expected one when given) and the expected name.
+	/// </summary>
+	/// <param name="entity">The entity to check</param>
+	/// <param name="actualName">The name the entity carries</param>
+	/// <param name="expectedName">The name it should carry</param>
+	/// <param name="expectedId">The id it should carry, or null to accept any non-blank id</param>
+	internal static void NamedEntity(SolidtimeEntityBase entity, string actualName, string expectedName, string? expectedId = null)
+	{
+		entity.Should().NotBeNull();
+		actualName.Should().Be(expectedName);
+		if (expectedId is null)
+		{
+			entity.Id.Should().NotBeNullOrWhiteSpace();
+		}
+		else
+		{
+			entity.Id.Should().Be(expectedId);
+		}
+	}
+
+	/// <summary>
+	/// Awaits a listing, asserts the envelope, and checks the timestamps of its first item when there is one.
+	/// </summary>
+	/// <typeparam name="T">The type of the items in the envelope</typeparam>
+	/// <param name="listing">The listing to await</param>
+	internal static async Task ListingAsync<T>(Task<PaginatedResponse<T>> listing)
+		where T : SolidtimeEntityBase
+	{
+		var result = await listing;
+		PaginatedEnvelope(result);
+
+		if (result.Data.Count != 0)
+		{
+			Timestamps(result.Data[0]);
+		}
 	}
 
 	/// <summary>

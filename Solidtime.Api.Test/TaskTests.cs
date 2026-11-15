@@ -1,4 +1,4 @@
-namespace Solidtime.Api.Test;
+﻿namespace Solidtime.Api.Test;
 
 /// <summary>
 /// Tests for the Tasks endpoint
@@ -36,9 +36,7 @@ public class TaskTests(ITestOutputHelper testOutputHelper, Fixture fixture)
 			created => SolidtimeClient.Tasks.DeleteAsync(organizationId, created.Data.Id, CancellationToken),
 			async createResult =>
 			{
-				createResult.Should().NotBeNull();
-				createResult.Data.Name.Should().Be(createRequest.Name);
-				createResult.Data.Id.Should().NotBeNullOrWhiteSpace();
+				Verify.NamedEntity(createResult.Data, createResult.Data.Name, createRequest.Name);
 				createResult.Data.ProjectId.Should().Be(projectId);
 				createResult.Data.IsDone.Should().BeFalse();
 
@@ -48,9 +46,7 @@ public class TaskTests(ITestOutputHelper testOutputHelper, Fixture fixture)
 				var updateRequest = new TaskUpdateRequest { Name = $"Updated Task {Guid.NewGuid()}" };
 				var updateResult = await SolidtimeClient.Tasks.UpdateAsync(organizationId, taskId, updateRequest, CancellationToken);
 
-				updateResult.Should().NotBeNull();
-				updateResult.Data.Id.Should().Be(taskId);
-				updateResult.Data.Name.Should().Be(updateRequest.Name);
+				Verify.NamedEntity(updateResult.Data, updateResult.Data.Name, updateRequest.Name, taskId);
 
 				// Mark as done
 				var doneRequest = new TaskUpdateRequest { Name = updateRequest.Name, IsDone = true };
@@ -80,15 +76,8 @@ public class TaskTests(ITestOutputHelper testOutputHelper, Fixture fixture)
 	/// Tests that tasks have valid timestamps
 	/// </summary>
 	[Fact]
-	public async Task Tasks_Get_HasValidTimestamps()
-	{
-		var result = await GetTasksAsync();
-
-		if (result.Data.Count != 0)
-		{
-			Verify.Timestamps(result.Data.First());
-		}
-	}
+	public Task Tasks_Get_HasValidTimestamps()
+		=> Verify.ListingAsync(GetTasksAsync());
 
 	private Task<PaginatedResponse<TaskModel>> GetTasksAsync()
 		=> ForOrganizationAsync((organizationId, cancellationToken)
