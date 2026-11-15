@@ -44,13 +44,7 @@ public partial class AuthenticatedBackingOffHttpClientHandler : DelegatingHandle
 	{
 		ArgumentNullException.ThrowIfNull(request);
 
-		if (_options.IsReadOnly
-			&& request.Method != HttpMethod.Get
-			&& request.Method != HttpMethod.Head
-			&& request.Method != HttpMethod.Options)
-		{
-			throw new InvalidOperationException($"The client is read-only; {request.Method} {request.RequestUri?.AbsolutePath} would change the server.");
-		}
+		EnsureWriteAllowed(request);
 
 		// Add Bearer token authentication
 		request.Headers.Authorization = new AuthenticationHeaderValue("Bearer", _options.ApiToken);
@@ -84,6 +78,18 @@ public partial class AuthenticatedBackingOffHttpClientHandler : DelegatingHandle
 
 		// Should never reach here, but return a failure response just in case
 		throw new InvalidOperationException("Retry loop completed without returning a response");
+	}
+
+	private void EnsureWriteAllowed(HttpRequestMessage request)
+	{
+		var isSafe = request.Method == HttpMethod.Get
+			|| request.Method == HttpMethod.Head
+			|| request.Method == HttpMethod.Options;
+
+		if (_options.IsReadOnly && !isSafe)
+		{
+			throw new InvalidOperationException($"The client is read-only; {request.Method} {request.RequestUri?.AbsolutePath} would change the server.");
+		}
 	}
 
 	/// <summary>

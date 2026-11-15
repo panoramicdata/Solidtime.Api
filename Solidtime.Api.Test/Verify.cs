@@ -1,4 +1,4 @@
-namespace Solidtime.Api.Test;
+﻿namespace Solidtime.Api.Test;
 
 /// <summary>
 /// Assertions shared by the endpoint test classes.
@@ -17,6 +17,23 @@ internal static class Verify
 	{
 		result.Should().NotBeNull();
 		result.Data.Should().NotBeNull();
+	}
+
+	/// <summary>
+	/// Awaits a listing, asserts the envelope, and checks the timestamps of its first item when there is one.
+	/// </summary>
+	/// <typeparam name="T">The type of the items in the envelope</typeparam>
+	/// <param name="listing">The listing to await</param>
+	internal static async Task ListingAsync<T>(Task<PaginatedResponse<T>> listing)
+		where T : SolidtimeEntityBase
+	{
+		var result = await listing;
+		PaginatedEnvelope(result);
+
+		if (result.Data.Count != 0)
+		{
+			Timestamps(result.Data[0]);
+		}
 	}
 
 	/// <summary>

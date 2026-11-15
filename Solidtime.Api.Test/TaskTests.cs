@@ -1,4 +1,4 @@
-namespace Solidtime.Api.Test;
+﻿namespace Solidtime.Api.Test;
 
 /// <summary>
 /// Tests for the Tasks endpoint
@@ -80,15 +80,8 @@ public class TaskTests(ITestOutputHelper testOutputHelper, Fixture fixture)
 	/// Tests that tasks have valid timestamps
 	/// </summary>
 	[Fact]
-	public async Task Tasks_Get_HasValidTimestamps()
-	{
-		var result = await GetTasksAsync();
-
-		if (result.Data.Count != 0)
-		{
-			Verify.Timestamps(result.Data.First());
-		}
-	}
+	public Task Tasks_Get_HasValidTimestamps()
+		=> Verify.ListingAsync(GetTasksAsync());
 
 	private Task<PaginatedResponse<TaskModel>> GetTasksAsync()
 		=> ForOrganizationAsync((organizationId, cancellationToken)

@@ -1,4 +1,4 @@
-namespace Solidtime.Api.Test;
+﻿namespace Solidtime.Api.Test;
 
 /// <summary>
 /// Tests for the Tags endpoint
@@ -10,12 +10,8 @@ public class TagTests(ITestOutputHelper testOutputHelper, Fixture fixture)
 	/// Tests that getting all tags succeeds
 	/// </summary>
 	[Fact]
-	public async Task Tags_Get_Succeeds()
-	{
-		var result = await GetTagsAsync();
-
-		Verify.PaginatedEnvelope(result);
-	}
+	public Task Tags_Get_Succeeds()
+		=> Verify.ListingAsync(GetTagsAsync());
 
 	/// <summary>
 	/// Tests that creating, updating, and deleting a tag succeeds
@@ -58,15 +54,8 @@ public class TagTests(ITestOutputHelper testOutputHelper, Fixture fixture)
 	/// Tests that tags have valid timestamps
 	/// </summary>
 	[Fact]
-	public async Task Tags_Get_HasValidTimestamps()
-	{
-		var result = await GetTagsAsync();
-
-		if (result.Data.Count != 0)
-		{
-			Verify.Timestamps(result.Data.First());
-		}
-	}
+	public Task Tags_Get_HasValidTimestamps()
+		=> Verify.ListingAsync(GetTagsAsync());
 
 	private Task<PaginatedResponse<Tag>> GetTagsAsync()
 		=> ForOrganizationAsync(SolidtimeClient.Tags.GetAsync);
