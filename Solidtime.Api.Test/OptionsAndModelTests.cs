@@ -137,39 +137,36 @@ public class OptionsAndModelTests
 			.Where(t => t.Namespace == "Solidtime.Api.Models" && t.IsClass && !t.IsAbstract && !t.IsGenericTypeDefinition && t.IsPublic)
 			.OrderBy(t => t.Name)];
 
+	private static readonly Dictionary<Type, object> _simpleValues = new()
+	{
+		[typeof(string)] = "x",
+		[typeof(int)] = 1,
+		[typeof(bool)] = true,
+		[typeof(DateTimeOffset)] = new DateTimeOffset(2024, 1, 2, 3, 4, 5, TimeSpan.Zero)
+	};
+
 	private static object? Value(Type type)
 	{
 		var target = Nullable.GetUnderlyingType(type) ?? type;
-		if (target == typeof(string))
+		if (_simpleValues.TryGetValue(target, out var simple))
 		{
-			return "x";
+			return simple;
 		}
 
-		if (target == typeof(int))
+		if (target.IsGenericType)
 		{
-			return 1;
+			return target.GetGenericTypeDefinition() == typeof(List<>) ? ListOf(target) : null;
 		}
 
-		if (target == typeof(bool))
-		{
-			return true;
-		}
-
-		if (target == typeof(DateTimeOffset))
-		{
-			return new DateTimeOffset(2024, 1, 2, 3, 4, 5, TimeSpan.Zero);
-		}
-
-		if (target.IsGenericType && target.GetGenericTypeDefinition() == typeof(List<>))
-		{
-			var list = (System.Collections.IList)Activator.CreateInstance(target)!;
-			list.Add(Value(target.GetGenericArguments()[0]));
-			return list;
-		}
-
-		return target.IsClass && !target.IsGenericType ? Populate(target) : null;
+		return target.IsClass ? Populate(target) : null;
 	}
 
+	private static object ListOf(Type listType)
+	{
+		var list = Activator.CreateInstance(listType)!;
+		listType.GetMethod("Add")!.Invoke(list, [Value(listType.GetGenericArguments()[0])]);
+		return list;
+	}
 	private static object Populate(Type type)
 	{
 		var instance = Activator.CreateInstance(type)!;
