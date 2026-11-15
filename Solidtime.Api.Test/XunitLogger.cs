@@ -8,31 +8,11 @@ namespace Solidtime.Api.Test;
 /// </remarks>
 /// <param name="categoryName">The category name for the logger</param>
 /// <param name="testOutputHelper">The test output helper</param>
-public class XunitLogger(string categoryName, ITestOutputHelper testOutputHelper) : ILogger
+public class XunitLogger(string categoryName, ITestOutputHelper testOutputHelper) : TestLoggerBase
 {
-
 	/// <inheritdoc/>
-	public IDisposable? BeginScope<TState>(TState state) where TState : notnull
-		=> null;
-
-	/// <inheritdoc/>
-	public bool IsEnabled(LogLevel logLevel)
-		=> true;
-
-	/// <inheritdoc/>
-	public void Log<TState>(
-		LogLevel logLevel,
-		EventId eventId,
-		TState state,
-		Exception? exception,
-		Func<TState, Exception?, string> formatter)
+	protected override void Write(LogLevel logLevel, string message, Exception? exception)
 	{
-		if (!IsEnabled(logLevel))
-		{
-			return;
-		}
-
-		var message = formatter(state, exception);
 		var logLevelString = logLevel switch
 		{
 			LogLevel.Trace => "TRACE",
@@ -70,7 +50,6 @@ public class XunitLogger(string categoryName, ITestOutputHelper testOutputHelper
 /// <param name="testOutputHelper">The test output helper</param>
 public class XunitLoggerProvider(ITestOutputHelper testOutputHelper) : ILoggerProvider
 {
-
 	/// <inheritdoc/>
 	public ILogger CreateLogger(string categoryName)
 		=> new XunitLogger(categoryName, testOutputHelper);
