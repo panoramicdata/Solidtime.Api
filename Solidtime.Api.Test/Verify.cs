@@ -26,7 +26,7 @@ internal static class Verify
 	/// <param name="actualName">The name the entity carries</param>
 	/// <param name="expectedName">The name it should carry</param>
 	/// <param name="expectedId">The id it should carry, or null to accept any non-blank id</param>
-	internal static void Entity(SolidtimeEntityBase entity, string actualName, string expectedName, string? expectedId = null)
+	internal static void NamedEntity(SolidtimeEntityBase entity, string actualName, string expectedName, string? expectedId = null)
 	{
 		entity.Should().NotBeNull();
 		actualName.Should().Be(expectedName);

@@ -36,7 +36,7 @@ public class TaskTests(ITestOutputHelper testOutputHelper, Fixture fixture)
 			created => SolidtimeClient.Tasks.DeleteAsync(organizationId, created.Data.Id, CancellationToken),
 			async createResult =>
 			{
-				Verify.Entity(createResult.Data, createResult.Data.Name, createRequest.Name);
+				Verify.NamedEntity(createResult.Data, createResult.Data.Name, createRequest.Name);
 				createResult.Data.ProjectId.Should().Be(projectId);
 				createResult.Data.IsDone.Should().BeFalse();
 
@@ -46,7 +46,7 @@ public class TaskTests(ITestOutputHelper testOutputHelper, Fixture fixture)
 				var updateRequest = new TaskUpdateRequest { Name = $"Updated Task {Guid.NewGuid()}" };
 				var updateResult = await SolidtimeClient.Tasks.UpdateAsync(organizationId, taskId, updateRequest, CancellationToken);
 
-				Verify.Entity(updateResult.Data, updateResult.Data.Name, updateRequest.Name, taskId);
+				Verify.NamedEntity(updateResult.Data, updateResult.Data.Name, updateRequest.Name, taskId);
 
 				// Mark as done
 				var doneRequest = new TaskUpdateRequest { Name = updateRequest.Name, IsDone = true };

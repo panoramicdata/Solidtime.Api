@@ -28,7 +28,7 @@ public class TagTests(ITestOutputHelper testOutputHelper, Fixture fixture)
 			created => SolidtimeClient.Tags.DeleteAsync(organizationId, created.Data.Id, CancellationToken),
 			async createResult =>
 			{
-				Verify.Entity(createResult.Data, createResult.Data.Name, createRequest.Name);
+				Verify.NamedEntity(createResult.Data, createResult.Data.Name, createRequest.Name);
 
 				var tagId = createResult.Data.Id;
 
@@ -39,7 +39,7 @@ public class TagTests(ITestOutputHelper testOutputHelper, Fixture fixture)
 				var updateRequest = new TagUpdateRequest { Name = $"Updated Tag {Guid.NewGuid()}" };
 				var updateResult = await SolidtimeClient.Tags.UpdateAsync(organizationId, tagId, updateRequest, CancellationToken);
 
-				Verify.Entity(updateResult.Data, updateResult.Data.Name, updateRequest.Name, tagId);
+				Verify.NamedEntity(updateResult.Data, updateResult.Data.Name, updateRequest.Name, tagId);
 
 				// Delete and verify
 				await SolidtimeClient.Tags.DeleteAsync(organizationId, tagId, CancellationToken);
