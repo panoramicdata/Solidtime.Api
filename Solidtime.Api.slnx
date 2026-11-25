@@ -5,7 +5,6 @@
     <Platform Name="x86" />
   </Configurations>
   <Folder Name="/.github/">
-    <File Path=".github/copilot-instructions.md" />
   </Folder>
   <Folder Name="/Solution Items/">
     <File Path=".editorconfig" />
