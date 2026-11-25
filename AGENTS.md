@@ -17,7 +17,7 @@ You are a careful, security-conscious contributor to this repository.
   CI/CD checks.
 - Do not commit secrets, credentials, or API tokens.
 - Do not force-push to `main`, rewrite published history, or delete branches without explicit
-  approval.
+  Approval.
 - Do not add `Co-Authored-By` trailers or other AI attribution to commit messages or pull requests.
 
 ## Tools
@@ -27,12 +27,12 @@ You are a careful, security-conscious contributor to this repository.
 
 ## Repository guide
 
-### 🚨 CRITICAL rules - READ FIRST 🚨
+### 🚨 CRITICAL rules - read first 🚨
 
-#### never SKIP TESTS
-- **NEVER** suggest skipping, disabling, or commenting out failing tests
-- **NEVER** use `Skip = "reason"` on tests unless explicitly requested by the user
-- **ALWAYS** fix the root cause of test failures - tests exist to catch issues. If this cannot be met, explain why in your summary.
+#### do not skip TESTS
+- **Do not** suggest skipping, disabling, or commenting out failing tests
+- **Do not** use `Skip = "reason"` on tests unless explicitly requested by the user
+- **Always** fix the root cause of test failures - tests exist to catch issues.
 - If a test fails, investigate and fix the underlying problem
 - If you don't know how to fix it, ask for clarification - don't bypass it
 - The only acceptable reason to skip a test is missing test data (404 from API), and even then, document it clearly
@@ -46,7 +46,7 @@ You are a careful, security-conscious contributor to this repository.
 
 #### ⚠️ Terminal Command Limitations
 
-When using `run_command_in_terminal`, **NEVER** use PowerShell here-strings (`@'...'@` or `@"..."@`). They cause the terminal to hang indefinitely because line breaks aren't preserved correctly through terminal automation. If this cannot be met, explain why in your summary.
+When using `run_command_in_terminal`, **do not** use PowerShell here-strings (`@'...'@` or `@"..."@`). They cause the terminal to hang indefinitely because line breaks aren't preserved correctly through terminal automation.
 
 **Why this happens**: PowerShell here-strings require the opening delimiter at the end of a line, content on subsequent lines, and the closing delimiter at the start of its own line.
 When commands are sent through terminal automation, these line breaks get mangled.
@@ -55,7 +55,7 @@ When commands are sent through terminal automation, these line breaks get mangle
 1. **For file edits**: Use the `edit_file` tool (preferred)
 2. **For simple replacements**: Use single-line `-replace` with escaped patterns
 3. **For complex multi-line content**: Provide code to the user to paste manually
-4. **If terminal is absolutely needed**: Write content to a temp file first, then use that file. If this cannot be met, explain why in your summary.
+4. **If terminal is absolutely needed**: Write content to a temp file first, then use that file.
 
 **Example of what not to do**:
 ```powershell
@@ -285,14 +285,14 @@ Test naming: `{Resource}_{Method}_{Scenario}`
 - ✅ Use nullable reference types (`?`) for optional values
 - ✅ Use primary constructors for dependency injection (C# 12+)
 - ✅ Use `record` types for simple DTOs
-- ✅ Always pass `CancellationToken` to async methods
+- ✅ pass `CancellationToken` to async methods
 - ✅ Use `await` consistently (no `.Result` or `.Wait()`)
 - ✅ Validate arguments with `ArgumentNullException.ThrowIfNull()`
 - ❌ Avoid `async void` (except event handlers)
 - ❌ Avoid catching generic `Exception` without rethrowing
 
 #### Documentation
-- All public APIs **must** have XML documentation
+- All public APIs **need to** have XML documentation
 - Include `<summary>`, `<param>`, `<returns>`, and `<exception>` tags
 - Reference official API docs: `https://engineering.solidtime.com/docs/...` (update the URL when the documentation moves)
 - Add `<example>` tags for complex usage
@@ -453,7 +453,7 @@ For each interface:
 #### XUnit v3 Specific Notes
 
 **Important**: XUnit v3 has namespace changes:
-- `ITestOutputHelper` is in `Xunit` namespace (NOT `Xunit.Abstractions`)
+- `ITestOutputHelper` is in `Xunit` namespace (not `Xunit.Abstractions`)
 - Use `using Xunit;` for test output helper
 - Use `using Xunit.Microsoft.DependencyInjection.Abstracts;` for TestBed
 - No `[CollectionDefinition]` attribute needed on test base class
@@ -559,7 +559,7 @@ public class Project
 5. **Async All the Way**: All I/O operations are async
 6. **Fail Fast**: Validate inputs early, throw meaningful exceptions
 7. **DRY**: Don't repeat yourself - use base classes, helpers, extensions
-8. **Security**: Never hardcode secrets, always use configuration. If this cannot be met, explain why in your summary.
+8. **Security**: do not hardcode secrets, use configuration.
 
 ### Quick Reference
 
@@ -609,12 +609,12 @@ For questions about:
 ### Critical Reminders for Implementation
 
 #### JSON Naming Convention
-- **ALWAYS use snake_case** for JSON property names: `[JsonPropertyName("is_archived")]`. If this cannot be met, explain why in your summary.
+- **Use snake_case** for JSON property names: `[JsonPropertyName("is_archived")]`.
 - Solidtime.Api differs from Toggl.Api here, because Toggl.Api uses camelCase.
 - Already configured in SolidtimeClient JsonSerializerOptions
 
 #### ID Types
-- **ALWAYS use `string`** for IDs (they are UUIDs)
+- **Use `string`** for IDs (they are UUIDs)
 - Exception: API token IDs may be non-UUID strings
 - Different from Toggl.Api which uses `long` numeric IDs
 
@@ -638,4 +638,4 @@ For questions about:
 ## PanoramicData staff
 
 PanoramicData staff have shared tooling in a private sibling checkout of PanoramicData.Skills. Anyone
-without it can ignore this section: everything needed to work on this repository is above.
+Without it can ignore this section: everything needed to work on this repository is above.
