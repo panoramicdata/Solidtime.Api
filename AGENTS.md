@@ -1,5 +1,12 @@
 # Agent instructions
 
+## Glossary
+
+- DRY: don't repeat yourself, a design principle.
+- ISO: International Organization for Standardization.
+- DI: dependency injection.
+- NET: .NET, Microsoft's developer platform; this is a product name.
+
 ## Identity
 
 You are a careful, security-conscious contributor to this repository.
@@ -20,12 +27,12 @@ You are a careful, security-conscious contributor to this repository.
 
 ## Repository guide
 
-### 🚨 CRITICAL RULES - READ FIRST 🚨
+### 🚨 CRITICAL rules - READ FIRST 🚨
 
-#### NEVER SKIP TESTS
+#### never SKIP TESTS
 - **NEVER** suggest skipping, disabling, or commenting out failing tests
 - **NEVER** use `Skip = "reason"` on tests unless explicitly requested by the user
-- **ALWAYS** fix the root cause of test failures - tests exist to catch issues
+- **ALWAYS** fix the root cause of test failures - tests exist to catch issues. If this cannot be met, explain why in your summary.
 - If a test fails, investigate and fix the underlying problem
 - If you don't know how to fix it, ask for clarification - don't bypass it
 - The only acceptable reason to skip a test is missing test data (404 from API), and even then, document it clearly
@@ -39,19 +46,20 @@ You are a careful, security-conscious contributor to this repository.
 
 #### ⚠️ Terminal Command Limitations
 
-When using `run_command_in_terminal`, **NEVER** use PowerShell here-strings (`@'...'@` or `@"..."@`). They cause the terminal to hang indefinitely because line breaks aren't preserved correctly through terminal automation.
+When using `run_command_in_terminal`, **NEVER** use PowerShell here-strings (`@'...'@` or `@"..."@`). They cause the terminal to hang indefinitely because line breaks aren't preserved correctly through terminal automation. If this cannot be met, explain why in your summary.
 
-**Why this happens**: PowerShell here-strings require the opening delimiter at the end of a line, content on subsequent lines, and the closing delimiter at the start of its own line. When commands are sent through terminal automation, these line breaks get mangled.
+**Why this happens**: PowerShell here-strings require the opening delimiter at the end of a line, content on subsequent lines, and the closing delimiter at the start of its own line.
+When commands are sent through terminal automation, these line breaks get mangled.
 
 **✅ Alternatives**:
 1. **For file edits**: Use the `edit_file` tool (preferred)
 2. **For simple replacements**: Use single-line `-replace` with escaped patterns
 3. **For complex multi-line content**: Provide code to the user to paste manually
-4. **If terminal is absolutely needed**: Write content to a temp file first, then use that file
+4. **If terminal is absolutely needed**: Write content to a temp file first, then use that file. If this cannot be met, explain why in your summary.
 
-**Example of what NOT to do**:
+**Example of what not to do**:
 ```powershell
- # ❌ BAD - will hang forever
+ # ❌ bad - will hang forever
 $content = @'
 line 1
 line 2
@@ -60,7 +68,7 @@ line 2
 
 **Example of correct approach**:
 ```powershell
- # ✅ GOOD - use edit_file tool instead for multi-line content
+ # ✅ good - use edit_file tool instead for multi-line content
  # ✅ GOOD - use single-line commands with -replace for simple changes
 $content = $content -replace 'old', 'new'
 ```
@@ -286,7 +294,7 @@ Test naming: `{Resource}_{Method}_{Scenario}`
 #### Documentation
 - All public APIs **must** have XML documentation
 - Include `<summary>`, `<param>`, `<returns>`, and `<exception>` tags
-- Reference official API docs: `https://engineering.solidtime.com/docs/...` (update URL as needed)
+- Reference official API docs: `https://engineering.solidtime.com/docs/...` (update the URL when the documentation moves)
 - Add `<example>` tags for complex usage
 
 ### Testing Guidelines
@@ -310,7 +318,7 @@ project.Name.Should().Be("Expected Name");
 #### Test Organization
 - One test class per interface (e.g., `ProjectTests` for `IProjects`)
 - Test all CRUD operations
-- Test error scenarios (404, 401, 403, etc.)
+- Test error scenarios (404, 401, 403)
 - Test pagination where applicable
 - Clean up test data in integration tests
 
@@ -329,7 +337,7 @@ Use UserSecrets for test configuration:
 **Finding Your Organization ID:**
 The Solidtime web UI uses `/teams/{organization-id}` in URLs (note: "teams" not "organizations"):
 1. Log into https://app.solidtime.io
-2. Look at the URL - it will be: `https://app.solidtime.io/teams/{YOUR-ORG-ID}`
+2. Look at the URL - it will be: `https://app.solidtime.io/teams/{your-org-id}`
 3. Copy the UUID from the URL
 4. Set it in user secrets: `dotnet user-secrets set "Configuration:SampleOrganizationId" "your-uuid"`
 
@@ -361,7 +369,7 @@ The Solidtime web UI uses `/teams/{organization-id}` in URLs (note: "teams" not 
 6. Include description from OpenAPI as XML documentation
 
 #### When Writing Tests
-1. Use helper methods from `SolidtimeTest`: `GetOrganizationIdAsync()`, etc.
+1. Use helper methods from `SolidtimeTest`: `GetOrganizationIdAsync()`
 2. Don't hardcode IDs - use configuration or fetch dynamically
 3. Use AwesomeAssertions, not built-in `Assert` class
 4. Test the happy path first, then edge cases
@@ -373,12 +381,12 @@ The Solidtime web UI uses `/teams/{organization-id}` in URLs (note: "teams" not 
 ```
 Solidtime.Api/
 ├── Exceptions/           # Custom exceptions
-├── Extensions/           # Extension methods (dates, strings, etc.)
+├── Extensions/           # Extension methods (dates, strings)
 ├── Interfaces/           # Refit API interfaces
 ├── Models/              # DTOs and domain models
 │   └── Enums/           # Enumerations
 ├── QueryObjects/        # Query parameter objects
-└── Properties/          # Assembly info, etc.
+└── Properties/          # Assembly info
 ```
 
 #### Test Project Structure
@@ -551,7 +559,7 @@ public class Project
 5. **Async All the Way**: All I/O operations are async
 6. **Fail Fast**: Validate inputs early, throw meaningful exceptions
 7. **DRY**: Don't repeat yourself - use base classes, helpers, extensions
-8. **Security**: Never hardcode secrets, always use configuration
+8. **Security**: Never hardcode secrets, always use configuration. If this cannot be met, explain why in your summary.
 
 ### Quick Reference
 
@@ -601,8 +609,8 @@ For questions about:
 ### Critical Reminders for Implementation
 
 #### JSON Naming Convention
-- **ALWAYS use snake_case** for JSON property names: `[JsonPropertyName("is_archived")]`
-- This is different from Toggl.Api which uses camelCase
+- **ALWAYS use snake_case** for JSON property names: `[JsonPropertyName("is_archived")]`. If this cannot be met, explain why in your summary.
+- Solidtime.Api differs from Toggl.Api here, because Toggl.Api uses camelCase.
 - Already configured in SolidtimeClient JsonSerializerOptions
 
 #### ID Types
