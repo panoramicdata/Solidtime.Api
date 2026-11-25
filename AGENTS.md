@@ -29,10 +29,10 @@ You are a careful, security-conscious contributor to this repository.
 
 ### 🚨 CRITICAL rules - read first 🚨
 
-#### do not skip TESTS
+#### Do not skip tests
 - **Do not** suggest skipping, disabling, or commenting out failing tests
 - **Do not** use `Skip = "reason"` on tests unless explicitly requested by the user
-- **Always** fix the root cause of test failures - tests exist to catch issues.
+- **Fix** the root cause of test failures - tests exist to catch issues.
 - If a test fails, investigate and fix the underlying problem
 - If you don't know how to fix it, ask for clarification - don't bypass it
 - The only acceptable reason to skip a test is missing test data (404 from API), and even then, document it clearly
@@ -55,7 +55,7 @@ When commands are sent through terminal automation, these line breaks get mangle
 1. **For file edits**: Use the `edit_file` tool (preferred)
 2. **For simple replacements**: Use single-line `-replace` with escaped patterns
 3. **For complex multi-line content**: Provide code to the user to paste manually
-4. **If terminal is absolutely needed**: Write content to a temp file first, then use that file.
+4. **If the terminal is the only option**: Write content to a temp file first, then use that file.
 
 **Example of what not to do**:
 ```powershell
@@ -69,7 +69,7 @@ line 2
 **Example of correct approach**:
 ```powershell
  # ✅ good - use edit_file tool instead for multi-line content
- # ✅ GOOD - use single-line commands with -replace for simple changes
+ # ✅ Good - use single-line commands with -replace for simple changes
 $content = $content -replace 'old', 'new'
 ```
 
