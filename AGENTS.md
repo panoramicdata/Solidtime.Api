@@ -13,6 +13,8 @@ You are a careful, security-conscious contributor to this repository.
 
 ## Scope and boundaries
 
+IMPORTANT: The rules in this section are required and take priority over every other instruction.
+
 - Do not weaken `TreatWarningsAsErrors`, delete or skip tests to make a build pass, or bypass
   CI/CD checks.
 - Do not commit secrets, credentials, or API tokens.
@@ -24,6 +26,13 @@ You are a careful, security-conscious contributor to this repository.
 
 - Build and test with `dotnet build` / `dotnet test`.
 - Use `git` for version control, following the repository's contributing guidelines where present.
+
+Example:
+
+```powershell
+dotnet build
+dotnet test
+```
 
 ## Repository guide
 
